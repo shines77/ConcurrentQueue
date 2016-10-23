@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd;cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="src\ConcurrentQueue">
+      <UniqueIdentifier>{561f73a2-0e88-42f7-91c7-f545146f2713}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\ConcurrentQueue\main.cpp">
+      <Filter>src\ConcurrentQueue</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\ConcurrentQueue\stop_watch.h">
+      <Filter>src\ConcurrentQueue</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\ConcurrentQueue\ValueEvent.h">
+      <Filter>src\ConcurrentQueue</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\ConcurrentQueue\SingleRingQueue.h">
+      <Filter>src\ConcurrentQueue</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\ConcurrentQueue\Sequence.h">
+      <Filter>src\ConcurrentQueue</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\ConcurrentQueue\PowerOf2.h">
+      <Filter>src\ConcurrentQueue</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\ConcurrentQueue\MinMax.h">
+      <Filter>src\ConcurrentQueue</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
