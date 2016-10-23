@@ -67,24 +67,24 @@ public:
         return value_.load(std::memory_order::memory_order_relaxed);
     }
 
-    void set(T val) {
-        value_.store(val, std::memory_order::memory_order_relaxed);
+    void set(T value) {
+        value_.store(value, std::memory_order::memory_order_relaxed);
     }
 
     T order_get() const {
-        return value.load(std::memory_order::memory_order_acquire);
+        return value_.load(std::memory_order::memory_order_acquire);
     }
 
     void order_set(T value) {
-        value_.store(val, std::memory_order::memory_order_release);
+        value_.store(value, std::memory_order::memory_order_release);
     }
 
     T explicit_get() const {
-        return std::atomic_load_explicit(value_, std::memory_order::memory_order_acquire);
+        return std::atomic_load_explicit(&value_, std::memory_order::memory_order_acquire);
     }
 
     void explicit_set(T value) {
-        std::atomic_store_explicit(value_, value, std::memory_order::memory_order_release);
+        std::atomic_store_explicit(&value_, value, std::memory_order::memory_order_release);
     }
 };
 

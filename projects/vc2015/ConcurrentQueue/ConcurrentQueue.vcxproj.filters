@@ -18,9 +18,6 @@
     <ClInclude Include="..\..\..\src\ConcurrentQueue\stop_watch.h">
       <Filter>src\ConcurrentQueue</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\ConcurrentQueue\ValueEvent.h">
-      <Filter>src\ConcurrentQueue</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\ConcurrentQueue\SingleRingQueue.h">
       <Filter>src\ConcurrentQueue</Filter>
     </ClInclude>
@@ -31,6 +28,12 @@
       <Filter>src\ConcurrentQueue</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\ConcurrentQueue\MinMax.h">
+      <Filter>src\ConcurrentQueue</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\ConcurrentQueue\LockedRingQueue.h">
+      <Filter>src\ConcurrentQueue</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\ConcurrentQueue\ValueMessage.h">
       <Filter>src\ConcurrentQueue</Filter>
     </ClInclude>
   </ItemGroup>

@@ -157,11 +157,12 @@
     <ClCompile Include="..\..\..\src\ConcurrentQueue\main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\ConcurrentQueue\LockedRingQueue.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\MinMax.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\PowerOf2.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\Sequence.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\SingleRingQueue.h" />
-    <ClInclude Include="..\..\..\src\ConcurrentQueue\ValueEvent.h" />
+    <ClInclude Include="..\..\..\src\ConcurrentQueue\ValueMessage.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\stop_watch.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
