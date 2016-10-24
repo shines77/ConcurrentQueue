@@ -73,5 +73,5 @@ add_custom_target(release
     COMMENT "Switch CMAKE_BUILD_TYPE to Release"
 )
 
-add_executable(TiStore ${SOURCE_FILES})
-target_link_libraries(TiStore ${EXTRA_LIBS})
+add_executable(ConcurrentQueue ${SOURCE_FILES})
+target_link_libraries(ConcurrentQueue ${EXTRA_LIBS})
