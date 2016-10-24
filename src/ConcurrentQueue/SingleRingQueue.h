@@ -77,10 +77,10 @@ public:
     size_type sizes() const {
         sequence_type head, tail;
         
-        std::atomic_thread_fence(std::memory_order::memory_order_acquire);
+        std::atomic_thread_fence(std::memory_order_acquire);
         head = this->head_.get();
         tail = this->tail_.get();
-        std::atomic_thread_fence(std::memory_order::memory_order_release);
+        std::atomic_thread_fence(std::memory_order_release);
 
         return (size_type)((head - tail) <= kMask) ? (head - tail) : (size_type)(-1);
     }
@@ -93,19 +93,19 @@ public:
             return QUEUE_OP_FAILURE;
         }
 
-        std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
+        std::atomic_thread_fence(std::memory_order_acq_rel);
 #if 1
         this->entries_[(index_type)head & kMask] = entry;
 #else
         this->entries_[head & (sequence_type)kMask] = entry;
 #endif
-        std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
+        std::atomic_thread_fence(std::memory_order_acq_rel);
 
         sequence_type next = head + 1;
 
-        std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
+        std::atomic_thread_fence(std::memory_order_acq_rel);
         this->head_.order_set(next);
-        std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
+        std::atomic_thread_fence(std::memory_order_acq_rel);
 
         return QUEUE_OP_SUCCESS;
     }
@@ -117,19 +117,19 @@ public:
             return QUEUE_OP_FAILURE;
         }
 
-        std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
+        std::atomic_thread_fence(std::memory_order_acq_rel);
 #if 1
         entry = this->entries_[(index_type)tail & kMask];
 #else
         entry = this->entries_[tail & (sequence_type)kMask];
 #endif
-        std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
+        std::atomic_thread_fence(std::memory_order_acq_rel);
 
         sequence_type next = tail + 1;
 
-        std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
+        std::atomic_thread_fence(std::memory_order_acq_rel);
         this->tail_.order_set(next);
-        std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
+        std::atomic_thread_fence(std::memory_order_acq_rel);
 
         return QUEUE_OP_SUCCESS;
     }

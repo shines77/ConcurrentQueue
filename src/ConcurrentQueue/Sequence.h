@@ -44,14 +44,14 @@ public:
     ~SequenceBase() {}
 
     void init(T initial_val) {
-        std::atomic_thread_fence(std::memory_order::memory_order_acquire);
+        std::atomic_thread_fence(std::memory_order_acquire);
         if (sizeof(T) > sizeof(uint32_t)) {
             *(uint64_t *)(&this->value_) = (uint64_t)initial_val;
         }
         else {
             *(uint32_t *)(&this->value_) = (uint32_t)initial_val;
         }
-        std::atomic_thread_fence(std::memory_order::memory_order_release);
+        std::atomic_thread_fence(std::memory_order_release);
     }
 
     T getMinValue() const { return kMinSequenceValue; }
@@ -61,27 +61,27 @@ public:
     void setMaxValue() { set(kMaxSequenceValue); }
 
     T get() const {
-        return value_.load(std::memory_order::memory_order_relaxed);
+        return value_.load(std::memory_order_relaxed);
     }
 
     void set(T value) {
-        value_.store(value, std::memory_order::memory_order_relaxed);
+        value_.store(value, std::memory_order_relaxed);
     }
 
     T order_get() const {
-        return value_.load(std::memory_order::memory_order_acquire);
+        return value_.load(std::memory_order_acquire);
     }
 
     void order_set(T value) {
-        value_.store(value, std::memory_order::memory_order_release);
+        value_.store(value, std::memory_order_release);
     }
 
     T explicit_get() const {
-        return std::atomic_load_explicit(&value_, std::memory_order::memory_order_acquire);
+        return std::atomic_load_explicit(&value_, std::memory_order_seq_cst);
     }
 
     void explicit_set(T value) {
-        std::atomic_store_explicit(&value_, value, std::memory_order::memory_order_release);
+        std::atomic_store_explicit(&value_, value, std::memory_order_seq_cst);
     }
 
 #if 1

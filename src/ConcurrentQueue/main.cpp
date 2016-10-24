@@ -76,7 +76,7 @@ void consumer_thread_proc(unsigned index, unsigned message_count, unsigned consu
 template <typename QueueType, typename MessageType>
 void producer_thread_proc(unsigned index, unsigned message_count, unsigned producers, QueueType * queue)
 {
-    //printf("Producer Thread: thread_idx = %d, producers = %d.\n", index, producers);
+    //printf("Producer Thread: thread_idx = %u, producers = %u.\n", index, producers);
 
     unsigned messages = message_count / producers;
     unsigned counter = 0;
@@ -90,19 +90,21 @@ void producer_thread_proc(unsigned index, unsigned message_count, unsigned produ
             else if ((pause_cnt & 0x0F) == 0x0F) {
                 jimi_sleep(0);
             }
-            else if ((pause_cnt & 0x1F) == 0x1F) {
+            else if ((pause_cnt & 0x1E) == 0x1E) {
                 jimi_sleep(1);
             }
             pause_cnt++;
         }
         counter++;
     }
+    //printf("Producer Thread: thread_idx = %u, consumers = %u, message_count = %u, messages = %u, counter = %u.\n",
+    //        index, producers, message_count, messages, counter);
 }
 
 template <typename QueueType, typename MessageType>
 void consumer_thread_proc(unsigned index, unsigned message_count, unsigned consumers, QueueType * queue)
 {
-    //printf("Consumer Thread: thread_idx = %d, consumers = %d.\n", index, consumers);
+    //printf("Consumer Thread: thread_idx = %u, consumers = %u.\n", index, consumers);
 
     unsigned messages = message_count / consumers;
     unsigned counter = 0;
@@ -116,13 +118,15 @@ void consumer_thread_proc(unsigned index, unsigned message_count, unsigned consu
             else if ((pause_cnt & 0x0F) == 0x0F) {
                 jimi_sleep(0);
             }
-            else if ((pause_cnt & 0x1F) == 0x1F) {
+            else if ((pause_cnt & 0x1E) == 0x1E) {
                 jimi_sleep(1);
             }
             pause_cnt++;
         }
         counter++;
     }
+    //printf("Consumer Thread: thread_idx = %u, consumers = %u, message_count = %u, messages = %u, counter = %u.\n",
+    //        index, consumers, message_count, messages, counter);
 }
 
 #endif

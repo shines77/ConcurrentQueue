@@ -174,7 +174,7 @@ void DisruptorRingQueue<T, SequenceType, Capacity, Producers, Consumers, NumThre
         if (bFillQueue) {
             ::memset((void *)newData, 0, sizeof(item_type) * kCapacity);
         }
-        std::atomic_thread_fence(std::memory_order::memory_order_seq_cst);
+        std::atomic_thread_fence(std::memory_order_seq_cst);
         this->entries = newData;
     }
 
@@ -186,7 +186,7 @@ void DisruptorRingQueue<T, SequenceType, Capacity, Producers, Consumers, NumThre
                 newBufferData[i] = (flag_type)(-1);
             }
         }
-        std::atomic_thread_fence(std::memory_order::memory_order_seq_cst);
+        std::atomic_thread_fence(std::memory_order_seq_cst);
         this->availableBuffer = newBufferData;
     }
 }
@@ -216,7 +216,7 @@ DisruptorRingQueue<T, SequenceType, Capacity, Producers, Consumers, NumThreads>:
 {
     sequence_type head, tail;
 
-    std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
+    std::atomic_thread_fence(std::memory_order_acq_rel);
 
     head = this->cursor.order_get();
     tail = this->workSequence.order_get();
@@ -305,7 +305,7 @@ template <typename T, typename SequenceType, uint32_t Capacity, uint32_t Produce
 inline
 void DisruptorRingQueue<T, SequenceType, Capacity, Producers, Consumers, NumThreads>::publish(sequence_type sequence)
 {
-    std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
+    std::atomic_thread_fence(std::memory_order_acq_rel);
 
     setAvailable(sequence);
 }
@@ -320,7 +320,7 @@ void DisruptorRingQueue<T, SequenceType, Capacity, Producers, Consumers, NumThre
     if (kIsAllocOnHeap) {
         assert(this->availableBuffer != nullptr);
     }
-    std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
+    std::atomic_thread_fence(std::memory_order_acq_rel);
     this->availableBuffer[index] = flag;
 }
 
@@ -332,7 +332,7 @@ bool DisruptorRingQueue<T, SequenceType, Capacity, Producers, Consumers, NumThre
     flag_type  flag  = (flag_type) (            sequence >> kIndexShift);
 
     flag_type  flagValue = this->availableBuffer[index];
-    std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
+    std::atomic_thread_fence(std::memory_order_acq_rel);
     return (flagValue == flag);
 }
 
@@ -407,11 +407,11 @@ int DisruptorRingQueue<T, SequenceType, Capacity, Producers, Consumers, NumThrea
     this->entries[nextSequence & kIndexMask] = entry;
     //this->entries[nextSequence & kIndexMask].copy(entry);
 
-    std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
+    std::atomic_thread_fence(std::memory_order_acq_rel);
 
     publish(nextSequence);
 
-    std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
+    std::atomic_thread_fence(std::memory_order_acq_rel);
     return QUEUE_OP_SUCCESS;
 }
 
@@ -434,7 +434,7 @@ int DisruptorRingQueue<T, SequenceType, Capacity, Producers, Consumers, NumThrea
 #if 0
                 if ((current == limit) || (current > limit && (limit - current) > kIndexMask)) {
 #if 0
-                    std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
+                    std::atomic_thread_fence(std::memory_order_acq_rel);
                     //processedSequence = true;
                     return QUEUE_OP_FAILURE;
 #else
@@ -451,11 +451,11 @@ int DisruptorRingQueue<T, SequenceType, Capacity, Producers, Consumers, NumThrea
             // Read the message data
             entry = this->entries[data.nextSequence & kIndexMask];
 
-            std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
+            std::atomic_thread_fence(std::memory_order_acq_rel);
             //data.tailSequence->set(data.nextSequence);
             data.processedSequence = true;
 
-            std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
+            std::atomic_thread_fence(std::memory_order_acq_rel);
             return QUEUE_OP_SUCCESS;
         }
         else {
@@ -485,7 +485,7 @@ DisruptorRingQueue<T, SequenceType, Capacity, Producers, Consumers, NumThreads>:
 
     loop_cnt = 0;
     spin_cnt = 1;
-    while ((availableSequence = this->cursor.get()) < sequence) {
+    while ((availableSequence = this->cursor.explicit_get()) < sequence) {
         // Need yiled() or sleep() a while.
         if (loop_cnt >= YIELD_THRESHOLD) {
             yeild_cnt = loop_cnt - YIELD_THRESHOLD;
@@ -506,9 +506,11 @@ DisruptorRingQueue<T, SequenceType, Capacity, Producers, Consumers, NumThreads>:
             for (pause_cnt = spin_cnt; pause_cnt > 0; --pause_cnt) {
                 jimi_mm_pause();
             }
-            spin_cnt = spin_cnt + 1;
+            spin_cnt = spin_cnt + 2;
         }
         loop_cnt++;
+        if (loop_cnt > 1000)
+            loop_cnt = 0;
     }
 
     if (availableSequence < sequence)
