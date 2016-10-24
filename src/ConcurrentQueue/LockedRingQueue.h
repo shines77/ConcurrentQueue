@@ -53,9 +53,9 @@ public:
     bool is_empty() const {
         const_pimpl_type pThis = const_cast_this();
         bool _isEmpty;
-        pThis->lock_.lock();
+        pThis->mutex_.lock();
         _isEmpty = (pThis->head_ == pThis->tail_);
-        pThis->lock_.unlock();
+        pThis->mutex_.unlock();
         assert((pThis->head_ - pThis->tail_) <= pThis->capacity());
         return _isEmpty;
     }
@@ -131,6 +131,8 @@ private:
     size_type           capacity_;
     value_type          allocEntries_;
     size_type           allocSize_;
+
+public:
     mutable mutex_type  mutex_;
 
 public:
@@ -178,6 +180,7 @@ protected:
         }
     }
 
+public:
     template <typename U>
     int inner_push_front(U && item) {
         mutex_.lock();
@@ -238,8 +241,8 @@ public:
     static const index_type kDefaultCapacity = (index_type)compile_time::round_to_pow2<kQueueDefaultCapacity>::value;
     static const size_type  kAlignment = compile_time::round_to_pow2<kCacheLineSize>::value;
 
-    template <typename U, typename T>
-    friend class LockedRingQueueAbstract;
+    //template <typename U, typename T>
+    //friend class LockedRingQueueAbstract;
 
 private:
     index_type          head_;
@@ -249,6 +252,8 @@ private:
     size_type           capacity_;
     value_type          allocEntries_;
     size_type           allocSize_;
+
+public:
     mutable mutex_type  mutex_;
 
 public:
@@ -323,6 +328,7 @@ protected:
         }
     }
 
+public:
     template <typename U>
     int inner_push_front(U && item) {
         mutex_.lock();
