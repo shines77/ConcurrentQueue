@@ -80,7 +80,7 @@ public:
     }
 
     int pop(item_type & item, int thread_idx) {
-        return queue_.pop(item);
+        return this->pop(item);
     }
 };
 
@@ -155,7 +155,7 @@ public:
     }
 
     int pop(item_type & item, int thread_idx) {
-        return queue_.pop(item);
+        return this->pop(item);
     }
 };
 
@@ -186,8 +186,8 @@ public:
     }
 
     template <typename U>
-    void push(U && item) {
-        queue_.push_front(std::forward<U>(item));
+    int push(U && item) {
+        return queue_.push_front(std::forward<U>(item));
     }
 
     item_type & back() {
@@ -210,7 +210,7 @@ public:
     }
 
     int pop(item_type & item, int thread_idx) {
-        return queue_.pop(item);
+        return this->pop(item);
     }
 };
 
@@ -266,7 +266,7 @@ public:
     }
 
     int pop(item_type & item, int thread_idx) {
-        return queue_.pop(item);
+        return this->pop(item);
     }
 };
 
@@ -322,7 +322,7 @@ public:
     }
 
     int pop(item_type & item, int thread_idx) {
-        return queue_.pop(item);
+        return this->pop(item);
     }
 };
 

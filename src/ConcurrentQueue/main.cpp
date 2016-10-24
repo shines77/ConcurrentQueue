@@ -291,20 +291,21 @@ void run_test_queue(unsigned message_count, unsigned producers, unsigned consume
 
     printf("-------------------------------------------------------------------------\n");
 
-    //run_test_queue_impl<StdQueueWrapper<Message *, native::Mutex>, Message>(message_count, producers, consumers, Capacity);
-    //run_test_queue_impl<StdDequeueWrapper<Message *, native::Mutex>, Message>(message_count, producers, consumers, Capacity);
+    //run_test_queue_impl<StdQueueWrapper<Message, native::Mutex>, Message>(message_count, producers, consumers, Capacity);
+    //run_test_queue_impl<StdDequeueWrapper<Message, native::Mutex>, Message>(message_count, producers, consumers, Capacity);
 
-    //run_test_queue_impl<LockedRingQueueWrapper<Message *, native::Mutex, index_type>, Message>(message_count, producers, consumers, Capacity);
+    //run_test_queue_impl<LockedRingQueueWrapper<Message, native::Mutex, index_type>, Message>(message_count, producers, consumers, Capacity);
     run_test_queue_impl<FixedLockedRingQueueWrapper<Message, native::Mutex, index_type, Capacity>, Message>(message_count, producers, consumers, Capacity);
 
     printf("-------------------------------------------------------------------------\n");
 
-    //run_test_queue_impl<StdQueueWrapper<Message *, std::mutex>, Message>(message_count, producers, consumers, Capacity);
-    //run_test_queue_impl<StdDequeueWrapper<Message *, std::mutex>, Message>(message_count, producers, consumers, Capacity);
+    //run_test_queue_impl<StdQueueWrapper<Message, std::mutex>, Message>(message_count, producers, consumers, Capacity);
+    //run_test_queue_impl<StdDequeueWrapper<Message, std::mutex>, Message>(message_count, producers, consumers, Capacity);
 
-    //run_test_queue_impl<LockedRingQueueWrapper<Message *, std::mutex, index_type>, Message>(message_count, producers, consumers, Capacity);
+    //run_test_queue_impl<LockedRingQueueWrapper<Message, std::mutex, index_type>, Message>(message_count, producers, consumers, Capacity);
     run_test_queue_impl<FixedLockedRingQueueWrapper<Message, std::mutex, index_type, Capacity>, Message>(message_count, producers, consumers, Capacity);
 
+    /*
     if (producers == 1 && consumers == 1) {
         printf("-------------------------------------------------------------------------\n");
         run_test_queue_impl<DisruptorRingQueueWrapper<Message, sindex_type, Capacity, 1, 1, 2>, Message>(message_count, producers, consumers, Capacity);
@@ -321,6 +322,7 @@ void run_test_queue(unsigned message_count, unsigned producers, unsigned consume
         printf("-------------------------------------------------------------------------\n");
         run_test_queue_impl<DisruptorRingQueueWrapper<Message, sindex_type, Capacity, 8, 8, 16>, Message>(message_count, producers, consumers, Capacity);
     }
+    //*/
 
     //printf("-------------------------------------------------------------------------\n");
 }
