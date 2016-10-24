@@ -155,9 +155,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\ConcurrentQueue\main.cpp" />
+    <ClCompile Include="..\..\..\src\ConcurrentQueue\sleep.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\ConcurrentQueue\common.h" />
+    <ClInclude Include="..\..\..\src\ConcurrentQueue\DisruptorRingQueue.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\LockedRingQueue.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\MinMax.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\NativeMutex.h" />
@@ -165,6 +167,7 @@
     <ClInclude Include="..\..\..\src\ConcurrentQueue\QueueWrapper.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\Sequence.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\SingleRingQueue.h" />
+    <ClInclude Include="..\..\..\src\ConcurrentQueue\sleep.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\ValueMessage.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\stop_watch.h" />
   </ItemGroup>

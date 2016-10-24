@@ -136,6 +136,10 @@ public:
     void explicit_set(T value) {
         std::atomic_store_explicit(&value_, value, std::memory_order::memory_order_release);
     }
+
+    T compareAndSwap(T old_value, T new_value) {
+        return value_.compare_exchange_strong(old_value, new_value);
+    }
 } CACHE_ALIGN_SUFFIX;
 
 #if defined(_MSC_VER) || defined(__GNUC__) || defined(__clang__)

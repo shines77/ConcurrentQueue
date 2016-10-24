@@ -16,8 +16,9 @@
 #include "common.h"
 #include "ValueMessage.h"
 #include "QueueWrapper.h"
-#include "SingleRingQueue.h"
 #include "LockedRingQueue.h"
+#include "SingleRingQueue.h"
+#include "DisruptorRingQueue.h"
 #include "stop_watch.h"
 
 #if defined(NDEBUG)
@@ -246,6 +247,8 @@ void run_test_queue(unsigned message_count, unsigned producers, unsigned consume
 void run_unittest()
 {
     FixedSingleRingQueue<ValueMessage<uint32_t>, uint32_t, 1024> queue;
+    DisruptorRingQueue<ValueMessage<uint32_t>, uint32_t, 1024> disruptor;
+    DisruptorRingQueue<ValueMessage<uint32_t>, uint32_t, 1024>::PopThreadStackData stackData;
     ValueMessage<uint32_t> msg;
 
     msg.set(32);
@@ -255,6 +258,9 @@ void run_unittest()
     queue.push(std::move(msg));
     queue.pop(msg);
     queue.pop(msg);
+
+    disruptor.push(msg);
+    disruptor.pop(msg, stackData);
 
     printf("value = %d\n", msg.get());
 

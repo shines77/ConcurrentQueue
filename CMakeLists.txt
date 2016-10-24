@@ -57,7 +57,10 @@ set(SOURCE_FILES
     src/ConcurrentQueue/Sequence.h
     src/ConcurrentQueue/LockedRingQueue.h
     src/ConcurrentQueue/SingleRingQueue.h
+    src/ConcurrentQueue/DisruptorRingQueue.h
     src/ConcurrentQueue/stop_watch.h
+    src/ConcurrentQueue/sleep.h
+    src/ConcurrentQueue/sleep.c
     src/ConcurrentQueue/main.cpp
     )
 
