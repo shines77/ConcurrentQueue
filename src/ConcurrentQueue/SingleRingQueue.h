@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <type_traits>
 
 #include "Sequence.h"
 #include "PowerOf2.h"
@@ -9,11 +10,12 @@
 template <typename T,
           typename SequenceType = uint32_t,
           int32_t Capacity = 1024U>
-class SingleRingQueue
+class FixedSingleRingQueue
 {
 public:
     typedef T                               item_type;
-    typedef typename item_type::value_type  value_type;
+    typedef typename std::remove_pointer<T>::type   rp_item_type;
+    typedef typename rp_item_type::value_type       value_type;
     typedef uint32_t                        size_type;
     typedef uint32_t                        index_type;
     typedef SequenceType                    sequence_type;
@@ -34,13 +36,13 @@ protected:
     std::unique_ptr<item_type [], void(*)(item_type *)> entries_;
 
 public:
-    SingleRingQueue() : head_(0), tail_(0),
+    FixedSingleRingQueue() : head_(0), tail_(0),
         entries_(new item_type[kCapacity],
         [](item_type * p) { if (p != nullptr) delete[] p; }) {
         init();
     }
 
-    ~SingleRingQueue() {
+    ~FixedSingleRingQueue() {
     }
 
 private:
@@ -78,7 +80,11 @@ public:
         }
 
         std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
+#if 1
+        this->entries_[(index_type)head & kMask] = entry;
+#else
         this->entries_[head & (sequence_type)kMask] = entry;
+#endif
         std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
 
         sequence_type next = head + 1;
@@ -90,10 +96,6 @@ public:
         return 0;
     }
 
-    int push(T const & entry) {
-        return push(entry);
-    }
-
     int pop(T & entry) {
         sequence_type head = this->head_.order_get();
         sequence_type tail = this->tail_.order_get();
@@ -102,7 +104,11 @@ public:
         }
 
         std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
+#if 1
+        entry = this->entries_[(index_type)tail & kMask];
+#else
         entry = this->entries_[tail & (sequence_type)kMask];
+#endif
         std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
 
         sequence_type next = tail + 1;

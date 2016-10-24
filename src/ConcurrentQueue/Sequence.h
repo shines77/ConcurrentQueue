@@ -1,5 +1,7 @@
 #pragma once
 
+#define NOMINMAX    // Make the default min(), max() marco invalid.
+
 #include <stdint.h>
 #include <atomic>
 #include <memory>

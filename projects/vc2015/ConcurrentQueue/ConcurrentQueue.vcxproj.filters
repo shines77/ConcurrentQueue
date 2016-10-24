@@ -36,5 +36,14 @@
     <ClInclude Include="..\..\..\src\ConcurrentQueue\ValueMessage.h">
       <Filter>src\ConcurrentQueue</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\ConcurrentQueue\common.h">
+      <Filter>src\ConcurrentQueue</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\ConcurrentQueue\QueueWrapper.h">
+      <Filter>src\ConcurrentQueue</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\ConcurrentQueue\NativeMutex.h">
+      <Filter>src\ConcurrentQueue</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

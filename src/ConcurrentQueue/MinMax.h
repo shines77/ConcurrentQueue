@@ -1,12 +1,7 @@
 
-#ifndef UTILS_MINMAX_H
-#define UTILS_MINMAX_H
-
-#if defined(_MSC_VER) && (_MSC_VER >= 1020)
 #pragma once
-#endif
 
-#define NOMINMAX
+#define NOMINMAX    // Make the default min(), max() marco invalid.
 
 #define TIMAX_MIN(x, y)  ((x) <= (y) ? (x) : (y))
 #define TIMAX_MAX(x, y)  ((x) >= (y) ? (x) : (y))
@@ -44,5 +39,3 @@ struct maxinum {
 };
 
 } // namespace math
-
-#endif  /* UTILS_MINMAX_H */
