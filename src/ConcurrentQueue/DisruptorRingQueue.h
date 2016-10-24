@@ -485,7 +485,7 @@ DisruptorRingQueue<T, SequenceType, Capacity, Producers, Consumers, NumThreads>:
 
     loop_cnt = 0;
     spin_cnt = 1;
-    while ((availableSequence = this->cursor.explicit_get()) < sequence) {
+    while ((availableSequence = this->cursor.order_get()) < sequence) {
         // Need yiled() or sleep() a while.
         if (loop_cnt >= YIELD_THRESHOLD) {
             yeild_cnt = loop_cnt - YIELD_THRESHOLD;
