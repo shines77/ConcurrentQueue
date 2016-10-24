@@ -135,8 +135,8 @@ private:
 
 public:
     FixedLockedRingQueue()
-        : head_(kInitCursor), tail_(kInitCursor), capacity_(kCapacity),
-          entries_(nullptr), allocEntries_(nullptr), allocSize_(0), mutex_() {
+        : head_(kInitCursor), tail_(kInitCursor), entries_(nullptr),
+          capacity_(kCapacity), allocEntries_(nullptr), allocSize_(0), mutex_() {
         init();
     }
 

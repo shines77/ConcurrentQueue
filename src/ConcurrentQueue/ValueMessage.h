@@ -87,11 +87,11 @@ public:
     ~ValueMessage() {}
 
     T get() const {
-        return value;
+        return this->value;
     }
 
     void set(T const & newValue) {
-        value = newValue;
+        this->value = newValue;
     }
 };
 
@@ -117,11 +117,11 @@ public:
     ~ValueMessage() {}
 
     uint64_t get() const {
-        return value;
+        return this->value;
     }
 
     void set(uint64_t newValue) {
-        value = newValue;
+        this->value = newValue;
     }
 };
 
@@ -147,11 +147,11 @@ public:
     ~ValueMessage() {}
 
     int64_t get() const {
-        return value;
+        return this->value;
     }
 
     void set(int64_t newValue) {
-        value = newValue;
+        this->value = newValue;
     }
 };
 
@@ -177,11 +177,11 @@ public:
     ~ValueMessage() {}
 
     uint32_t get() const {
-        return value;
+        return this->value;
     }
 
     void set(uint32_t newValue) {
-        value = newValue;
+        this->value = newValue;
     }
 };
 
@@ -207,10 +207,10 @@ public:
     ~ValueMessage() {}
 
     int32_t get() const {
-        return value;
+        return this->value;
     }
 
     void set(int32_t newValue) {
-        value = newValue;
+        this->value = newValue;
     }
 };

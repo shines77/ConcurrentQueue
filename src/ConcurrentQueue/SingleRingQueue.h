@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory.h>
 #include <memory>
 #include <type_traits>
 
@@ -57,7 +58,7 @@ private:
     void init() JIMI_NOEXCEPT {
         item_type * pNewData = this->entries_.get();
         if (pNewData != nullptr) {
-            memset((void *)pNewData, 0, sizeof(item_type) * kCapacity);
+            ::memset((void *)pNewData, 0, sizeof(item_type) * kCapacity);
         }
     }
 

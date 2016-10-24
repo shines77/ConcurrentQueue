@@ -288,7 +288,7 @@ int main(int argn, char * argv[])
 
     printf("-------------------------------------------------------------------------\n");
 
-#if defined(NDEBUG)
+#if defined(_WIN32) && defined(NDEBUG)
     system("pause");
 #endif
     return 0;

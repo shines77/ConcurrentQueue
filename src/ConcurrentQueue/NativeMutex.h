@@ -90,7 +90,7 @@ private:
 
 public:
     Mutex() {
-        pthread_mutex_init(&mutex_);
+        pthread_mutex_init(&mutex_, NULL);
     }
 
     ~Mutex() {

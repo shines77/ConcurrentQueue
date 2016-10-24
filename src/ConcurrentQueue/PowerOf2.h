@@ -52,7 +52,7 @@ template <typename SizeType>
 inline bool is_pow2(SizeType n) {
     static_assert(std::is_integral<SizeType>::value,
         "Error: is_pow2(SizeType n) -- SizeType must be a integral type.");
-    typedef std::make_unsigned<SizeType>::type UnsignedSizeType;
+    typedef typename std::make_unsigned<SizeType>::type UnsignedSizeType;
     UnsignedSizeType x = n;
     return ((x & (x - 1)) == 0);
 }
@@ -61,7 +61,7 @@ template <typename SizeType>
 inline SizeType verify_pow2(SizeType n) {
     static_assert(std::is_integral<SizeType>::value,
         "Error: verify_pow2(SizeType n) -- SizeType must be a integral type.");
-    typedef std::make_unsigned<SizeType>::type UnsignedSizeType;
+    typedef typename std::make_unsigned<SizeType>::type UnsignedSizeType;
     UnsignedSizeType x = n;
     return (x & (x - 1));
 }
@@ -70,7 +70,7 @@ template <typename SizeType>
 inline SizeType round_to_pow2(SizeType n) {
     static_assert(std::is_integral<SizeType>::value,
         "Error: round_to_pow2(SizeType n) -- SizeType must be a integral type.");
-    typedef std::make_unsigned<SizeType>::type UnsignedSizeType;
+    typedef typename std::make_unsigned<SizeType>::type UnsignedSizeType;
     UnsignedSizeType x;
     if (is_pow2(n)) {
         return n;
@@ -227,7 +227,7 @@ struct round_down_to_pow2 {
  || defined(__amd64__) || defined(__x86_64__)
 
 template <>
-struct round_to_pow2<18446744073709551615> {
+struct round_to_pow2<18446744073709551615ULL> {
     enum { value = detail::false_value };
 };
 
