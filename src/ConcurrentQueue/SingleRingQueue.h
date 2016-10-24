@@ -3,6 +3,7 @@
 #include <memory>
 #include <type_traits>
 
+#include "common.h"
 #include "Sequence.h"
 #include "PowerOf2.h"
 #include "MinMax.h"
@@ -36,21 +37,33 @@ protected:
     std::unique_ptr<item_type [], void(*)(item_type *)> entries_;
 
 public:
+#if (defined(__cplusplus) && (__cplusplus >= 201300L)) || (defined(_MSC_VER) && (_MSC_VER >= 1900L))
     FixedSingleRingQueue() : head_(0), tail_(0),
         entries_(new item_type[kCapacity],
         [](item_type * p) { if (p != nullptr) delete[] p; }) {
         init();
     }
+#else
+    FixedSingleRingQueue() : head_(0), tail_(0),
+        entries_(new item_type[kCapacity], &FixedSingleRingQueue<T, SequenceType, Capacity>::entries_deleter) {
+        init();
+    }
+#endif
 
     ~FixedSingleRingQueue() {
     }
 
 private:
-    void init() noexcept {
+    void init() JIMI_NOEXCEPT {
         item_type * pNewData = this->entries_.get();
         if (pNewData != nullptr) {
             memset((void *)pNewData, 0, sizeof(item_type) * kCapacity);
         }
+    }
+
+    static void entries_deleter(item_type * p) {
+        if (p != nullptr)
+            delete[] p;
     }
 
 public:

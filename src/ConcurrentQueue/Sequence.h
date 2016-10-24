@@ -19,8 +19,56 @@
 #pragma pack(1)
 #endif
 
+#if (defined(__cplusplus) && (__cplusplus >= 201300L)) || (defined(_MSC_VER) && (_MSC_VER >= 1900L))
+// C++ 11
+#define ALIGN_PREFIX(N)         alignas(N)
+#define ALIGN_SUFFIX(N)
+
+#define CACHE_ALIGN_PREFIX      alignas(JIMI_CACHELINE_SIZE)
+#define CACHE_ALIGN_SUFFIX
+
+#define PACKED_ALIGN_PREFIX(N)  alignas(N)
+#define PACKED_ALIGN_SUFFIX(N)
+
+#elif (defined(_MSC_VER) && (_MSC_VER >= 1400L)) || (defined(__INTEL_COMPILER) || defined(__ICC))
+// msvc & intel c++
+#define ALIGN_PREFIX(N)         __declspec(align(N))
+#define ALIGN_SUFFIX(N)
+
+#define CACHE_ALIGN_PREFIX      __declspec(align(JIMI_CACHELINE_SIZE))
+#define CACHE_ALIGN_SUFFIX
+
+#define PACKED_ALIGN_PREFIX(N)  __declspec(align(N))
+#define PACKED_ALIGN_SUFFIX(N)
+
+#elif (defined(__GUNC__) || defined(__GNUG__)) || defined(__clang__) || defined(__MINGW32__) || defined(__CYGWIN__) \
+   || defined(__linux) || defined(__APPLE__) || defined(__FreeBSD__)
+// gcc, g++, clang, MinGW, cygwin
+#define ALIGN_PREFIX(N)         __attribute__((__aligned__((N))))
+#define ALIGN_SUFFIX(N)
+
+#define CACHE_ALIGN_PREFIX      __attribute__((__aligned__((JIMI_CACHE_LINE_SIZE))))
+#define CACHE_ALIGN_SUFFIX
+
+#define PACKED_ALIGN_PREFIX(N)
+#define PACKED_ALIGN_SUFFIX(N)  __attribute__((packed, aligned(N)))
+
+#else
+// Not support
+#define ALIGN_PREFIX(N)
+#define ALIGN_SUFFIX(N)
+
+#define CACHE_ALIGN_PREFIX
+#define CACHE_ALIGN_SUFFIX
+
+#define PACKED_ALIGN_PREFIX(N)
+#define PACKED_ALIGN_SUFFIX(N)
+
+#error "Warning: alignas(N) is not support, you can comment on this line."
+#endif
+
 template <typename T>
-class alignas(JIMI_CACHELINE_SIZE) SequenceBase
+class CACHE_ALIGN_PREFIX SequenceBase
 {
 public:
     static const size_t kSizeOfInt32 = sizeof(uint32_t);
@@ -34,7 +82,7 @@ public:
     static const T kMaxSequenceValue;
 
 protected:
-    std::atomic<T>  value_;
+    CACHE_ALIGN_PREFIX std::atomic<T>  value_ CACHE_ALIGN_SUFFIX;
     char            padding[(JIMI_CACHELINE_SIZE >= sizeof(std::atomic<T>))
                       ? (JIMI_CACHELINE_SIZE - sizeof(std::atomic<T>))
                       : ((sizeof(std::atomic<T>) - JIMI_CACHELINE_SIZE) & (JIMI_CACHELINE_SIZE - 1))];
@@ -88,7 +136,7 @@ public:
     void explicit_set(T value) {
         std::atomic_store_explicit(&value_, value, std::memory_order::memory_order_release);
     }
-};
+} CACHE_ALIGN_SUFFIX;
 
 #if defined(_MSC_VER) || defined(__GNUC__) || defined(__clang__)
 #pragma pack(pop)
