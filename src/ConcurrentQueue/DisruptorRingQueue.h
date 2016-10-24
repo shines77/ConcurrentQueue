@@ -355,7 +355,7 @@ template <typename T, typename SequenceType, uint32_t Capacity, uint32_t Produce
 typename DisruptorRingQueue<T, SequenceType, Capacity, Producers, Consumers, NumThreads>::Sequence *
 DisruptorRingQueue<T, SequenceType, Capacity, Producers, Consumers, NumThreads>::getGatingSequences(int index)
 {
-    if (index >= 0 && index < kCapacity) {
+    if (index >= 0 && index < (int)kCapacity) {
         return &this->gatingSequences[index];
     }
     return nullptr;

@@ -357,7 +357,7 @@ private:
 
 public:
     DisruptorRingQueueWrapper() : queue_() {
-        for (int thread_idx = 0; thread_idx < Consumers; ++thread_idx)
+        for (int thread_idx = 0; thread_idx < (int)Consumers; ++thread_idx)
             init(thread_idx);
         queue_.start();
     }
