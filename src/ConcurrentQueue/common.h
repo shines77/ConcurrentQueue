@@ -6,6 +6,11 @@
 #pragma once
 #endif
 
+#ifdef _MSC_VER
+#include <intrin.h>     // For _ReadWriteBarrier(), InterlockedCompareExchange().
+#endif  // _MSC_VER
+#include <emmintrin.h>  // For _mm_pause().
+
 #if (defined(__cplusplus) && (__cplusplus >= 201402L)) || (defined(_MSC_VER) && (_MSC_VER >= 1900L))
 // C++ 14 or vc2015, for std::put_time().
 #elif (defined(__cplusplus) && (__cplusplus >= 201300L)) || (defined(_MSC_VER) && (_MSC_VER >= 1900L))
