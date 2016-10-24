@@ -8,6 +8,7 @@
 #include "NativeMutex.h"
 #include "LockedRingQueue.h"
 #include "SingleRingQueue.h"
+#include "DisruptorRingQueue.h"
 
 template <typename T, typename MutexType>
 class StdQueueWrapper
@@ -42,9 +43,10 @@ public:
     }
 
     template <typename U>
-    void push(U && item) {
+    int push(U && item) {
         native::scoped_lock<mutex_type> lock(mutex_);
         queue_.push(std::forward<U>(item));
+        return QUEUE_OP_SUCCESS;
     }
 
     item_type & front() {
@@ -70,11 +72,15 @@ public:
             item_type & ret = queue_.back();
             item = std::move(ret);
             queue_.pop();
-            return true;
+            return QUEUE_OP_SUCCESS;
         }
         else {
-            return false;
+            return QUEUE_OP_FAILURE;
         }
+    }
+
+    int pop(item_type & item, int thread_idx) {
+        return queue_.pop(item);
     }
 };
 
@@ -112,9 +118,10 @@ public:
     }
 
     template <typename U>
-    void push(U && item) {
+    int push(U && item) {
         native::scoped_lock<mutex_type> lock(mutex_);
         queue_.push_back(std::forward<U>(item));
+        return QUEUE_OP_SUCCESS;
     }
 
     item_type & front() {
@@ -140,11 +147,15 @@ public:
             item_type & ret = queue_.back();
             item = std::move(ret);
             queue_.pop_front();
-            return true;
+            return QUEUE_OP_SUCCESS;
         }
         else {
-            return false;
+            return QUEUE_OP_FAILURE;
         }
+    }
+
+    int pop(item_type & item, int thread_idx) {
+        return queue_.pop(item);
     }
 };
 
@@ -197,6 +208,10 @@ public:
     int pop(item_type & item) {
         return queue_.pop_back(item);
     }
+
+    int pop(item_type & item, int thread_idx) {
+        return queue_.pop(item);
+    }
 };
 
 template <typename T, typename MutexType, typename IndexType,
@@ -227,8 +242,8 @@ public:
     }
 
     template <typename U>
-    void push(U && item) {
-        queue_.push_front(std::forward<U>(item));
+    int push(U && item) {
+        return queue_.push_front(std::forward<U>(item));
     }
 
     item_type & back() {
@@ -248,6 +263,10 @@ public:
 
     int pop(item_type & item) {
         return queue_.pop_back(item);
+    }
+
+    int pop(item_type & item, int thread_idx) {
+        return queue_.pop(item);
     }
 };
 
@@ -279,8 +298,8 @@ public:
     }
 
     template <typename U>
-    void push(U && item) {
-        queue_.push(std::forward<U>(item));
+    int push(U && item) {
+        return queue_.push(std::forward<U>(item));
     }
 
     item_type & back() {
@@ -300,5 +319,83 @@ public:
 
     int pop(item_type & item) {
         return queue_.pop(item);
+    }
+
+    int pop(item_type & item, int thread_idx) {
+        return queue_.pop(item);
+    }
+};
+
+template <typename T, typename SequenceType,
+          size_t InitCapacity = kQueueDefaultCapacity,
+          uint32_t Producers = 0, uint32_t Consumers = 0, uint32_t NumThreads = 0>
+class DisruptorRingQueueWrapper
+{
+public:
+    typedef DisruptorRingQueue<T, SequenceType, InitCapacity, Producers, Consumers, NumThreads> queue_type;
+    typedef typename queue_type::PopThreadStackData PopThreadStackData;
+    typedef typename queue_type::Sequence sequence_type;
+    typedef T item_type;
+
+private:
+    queue_type queue_;
+    sequence_type tailSequence_[Consumers];
+    PopThreadStackData stackData_[Consumers];
+
+private:
+    void init(int thread_idx) {
+        assert(thread_idx >= 0 && thread_idx < Consumers);
+        sequence_type * pTailSequence = queue_.getGatingSequences(thread_idx);
+        if (pTailSequence == nullptr)
+            pTailSequence = &tailSequence_[thread_idx];
+        tailSequence_[thread_idx].order_set(sequence_type::INITIAL_CURSOR_VALUE);
+        stackData_[thread_idx].tailSequence = pTailSequence;
+        stackData_[thread_idx].nextSequence = stackData_[thread_idx].tailSequence->order_get();
+        stackData_[thread_idx].cachedAvailableSequence = sequence_type::INITIAL_CURSOR_VALUE;
+        stackData_[thread_idx].processedSequence = true;
+    }
+
+public:
+    DisruptorRingQueueWrapper() : queue_() {
+        for (int thread_idx = 0; thread_idx < Consumers; ++thread_idx)
+            init(thread_idx);
+        queue_.start();
+    }
+    ~DisruptorRingQueueWrapper() {}
+
+    bool empty() const {
+        return queue_.is_empty();
+    }
+
+    size_t sizes() const {
+        return queue_.sizes();
+    }
+
+    void resize(size_t new_size) {
+        // Do nothing!!
+    }
+
+    template <typename U>
+    int push(U && item) {
+        return queue_.push(std::forward<U>(item));
+    }
+
+    item_type & back() {
+        item_type item;
+        if (queue_.pop(item) == QUEUE_OP_SUCCESS) {
+            return std::move(item);
+        }
+        else {
+            throw ("DisruptorRingQueue<T> is empty!");
+        }
+    }
+
+    void pop() {
+        item_type item;
+        queue_.pop(item);
+    }
+
+    int pop(item_type & item, int thread_idx) {
+        return queue_.pop(item, stackData_[thread_idx]);
     }
 };

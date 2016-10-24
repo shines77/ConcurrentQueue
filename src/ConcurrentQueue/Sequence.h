@@ -7,65 +7,12 @@
 #include <memory>
 #include <limits>
 
-#define USE_64BIT_SEQUENCE      1       // 1: SequenceStd ==> SequenceBase<uint64_t>
-                                        // 0: SequenceStd ==> SequenceBase<uint32_t>
+#include "common.h"
 
-#ifndef JIMI_CACHELINE_SIZE
-#define JIMI_CACHELINE_SIZE     64      // This value must be equal power of 2.
-#endif
-
-#if defined(_MSC_VER) || defined(__GNUC__) || defined(__clang__)
+#if defined(_MSC_VER) || defined(__GNUC__) || defined(__GNUG__) || defined(__clang__)
 #pragma pack(push)
 #pragma pack(1)
-#endif
-
-#if (defined(__cplusplus) && (__cplusplus >= 201300L)) || (defined(_MSC_VER) && (_MSC_VER >= 1900L))
-// C++ 11
-#define ALIGN_PREFIX(N)         alignas(N)
-#define ALIGN_SUFFIX(N)
-
-#define CACHE_ALIGN_PREFIX      alignas(JIMI_CACHELINE_SIZE)
-#define CACHE_ALIGN_SUFFIX
-
-#define PACKED_ALIGN_PREFIX(N)  alignas(N)
-#define PACKED_ALIGN_SUFFIX(N)
-
-#elif (defined(_MSC_VER) && (_MSC_VER >= 1400L)) || (defined(__INTEL_COMPILER) || defined(__ICC))
-// msvc & intel c++
-#define ALIGN_PREFIX(N)         __declspec(align(N))
-#define ALIGN_SUFFIX(N)
-
-#define CACHE_ALIGN_PREFIX      __declspec(align(JIMI_CACHELINE_SIZE))
-#define CACHE_ALIGN_SUFFIX
-
-#define PACKED_ALIGN_PREFIX(N)  __declspec(align(N))
-#define PACKED_ALIGN_SUFFIX(N)
-
-#elif (defined(__GUNC__) || defined(__GNUG__)) || defined(__clang__) || defined(__MINGW32__) || defined(__CYGWIN__) \
-   || defined(__linux) || defined(__APPLE__) || defined(__FreeBSD__)
-// gcc, g++, clang, MinGW, cygwin
-#define ALIGN_PREFIX(N)         __attribute__((__aligned__((N))))
-#define ALIGN_SUFFIX(N)
-
-#define CACHE_ALIGN_PREFIX      __attribute__((__aligned__((JIMI_CACHELINE_SIZE))))
-#define CACHE_ALIGN_SUFFIX
-
-#define PACKED_ALIGN_PREFIX(N)
-#define PACKED_ALIGN_SUFFIX(N)  __attribute__((packed, aligned(N)))
-
-#else
-// Not support
-#define ALIGN_PREFIX(N)
-#define ALIGN_SUFFIX(N)
-
-#define CACHE_ALIGN_PREFIX
-#define CACHE_ALIGN_SUFFIX
-
-#define PACKED_ALIGN_PREFIX(N)
-#define PACKED_ALIGN_SUFFIX(N)
-
-#error "Warning: alignas(N) is not support, you can comment on this line."
-#endif
+#endif // packed(push, 1)
 
 template <typename T>
 class CACHE_ALIGN_PREFIX SequenceBase
@@ -137,10 +84,46 @@ public:
         std::atomic_store_explicit(&value_, value, std::memory_order::memory_order_release);
     }
 
+#if 1
     T compareAndSwap(T old_value, T new_value) {
-        return value_.compare_exchange_strong(old_value, new_value);
+        return new_value;
     }
+#else
+    T compareAndSwap(T & old_value, T new_value) {
+        T orig_value = value_.load(std::memory_order_relaxed);
+        if (!value_.compare_exchange_weak(old_value, new_value,
+            std::memory_order_release, std::memory_order_relaxed))
+            return orig_value;
+        else
+            return old_value;
+    }
+#endif
+
 } CACHE_ALIGN_SUFFIX;
+
+template <>
+inline int32_t SequenceBase<int32_t>::compareAndSwap(int32_t old_value, int32_t new_value) 
+{
+    return jimi_val_compare_and_swap32(&(this->value_), old_value, new_value);
+}
+
+template <>
+inline uint32_t SequenceBase<uint32_t>::compareAndSwap(uint32_t old_value, uint32_t new_value) 
+{
+    return jimi_val_compare_and_swap32u(&(this->value_), old_value, new_value);
+}
+
+template <>
+inline int64_t SequenceBase<int64_t>::compareAndSwap(int64_t old_value, int64_t new_value) 
+{
+    return jimi_val_compare_and_swap64(&(this->value_), old_value, new_value);
+}
+
+template <>
+inline uint64_t SequenceBase<uint64_t>::compareAndSwap(uint64_t old_value, uint64_t new_value) 
+{
+    return jimi_val_compare_and_swap64u(&(this->value_), old_value, new_value);
+}
 
 #if defined(_MSC_VER) || defined(__GNUC__) || defined(__clang__)
 #pragma pack(pop)

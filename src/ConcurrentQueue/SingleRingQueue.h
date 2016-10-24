@@ -90,7 +90,7 @@ public:
         sequence_type head = this->head_.order_get();
         sequence_type tail = this->tail_.order_get();
         if ((head - tail) > kMask) {
-            return -1;
+            return QUEUE_OP_FAILURE;
         }
 
         std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
@@ -107,14 +107,14 @@ public:
         this->head_.order_set(next);
         std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
 
-        return 0;
+        return QUEUE_OP_SUCCESS;
     }
 
     int pop(T & entry) {
         sequence_type head = this->head_.order_get();
         sequence_type tail = this->tail_.order_get();
         if ((tail == head) || (tail > head && (head - tail) > kMask)) {
-            return -1;
+            return QUEUE_OP_FAILURE;
         }
 
         std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
@@ -131,6 +131,6 @@ public:
         this->tail_.order_set(next);
         std::atomic_thread_fence(std::memory_order::memory_order_acq_rel);
 
-        return 0;
+        return QUEUE_OP_SUCCESS;
     }
 };

@@ -30,11 +30,15 @@ static const size_t kMaxMessageCount = (50 * 10000);
 #if defined(_WIN64) || defined(_M_X64) || defined(_M_AMD64) || defined(_M_IA64) \
  || defined(__amd64__) || defined(__x86_64__)
 typedef uint64_t index_type;
+typedef int64_t sindex_type;
 typedef ValueMessage<uint64_t> Message;
 #else
 typedef uint32_t index_type;
+typedef int32_t sindex_type;
 typedef ValueMessage<uint32_t> Message;
 #endif
+
+#if 0
 
 template <typename QueueType, typename MessageType>
 void producer_thread_proc(unsigned index, unsigned message_count, unsigned producers, QueueType * queue)
@@ -67,7 +71,63 @@ void consumer_thread_proc(unsigned index, unsigned message_count, unsigned consu
     }
 }
 
-#if 1
+#else
+
+template <typename QueueType, typename MessageType>
+void producer_thread_proc(unsigned index, unsigned message_count, unsigned producers, QueueType * queue)
+{
+    //printf("Producer Thread: thread_idx = %d, producers = %d.\n", index, producers);
+
+    unsigned messages = message_count / producers;
+    unsigned counter = 0;
+    uint32_t pause_cnt = 0;
+    while (counter < messages) {
+        MessageType msg(counter);
+        while (queue->push(msg) != (int)QUEUE_OP_SUCCESS) {
+            if ((pause_cnt & 0x07) != 0x07) {
+                jimi_mm_pause();
+            }
+            else if ((pause_cnt & 0x0F) == 0x0F) {
+                jimi_sleep(0);
+            }
+            else if ((pause_cnt & 0x1F) == 0x1F) {
+                jimi_sleep(1);
+            }
+            pause_cnt++;
+        }
+        counter++;
+    }
+}
+
+template <typename QueueType, typename MessageType>
+void consumer_thread_proc(unsigned index, unsigned message_count, unsigned consumers, QueueType * queue)
+{
+    //printf("Consumer Thread: thread_idx = %d, consumers = %d.\n", index, consumers);
+
+    unsigned messages = message_count / consumers;
+    unsigned counter = 0;
+    uint32_t pause_cnt = 0;
+    while (counter < messages) {
+        MessageType msg;
+        while (queue->pop(msg, index) != (int)QUEUE_OP_SUCCESS) {
+            if ((pause_cnt & 0x07) != 0x07) {
+                jimi_mm_pause();
+            }
+            else if ((pause_cnt & 0x0F) == 0x0F) {
+                jimi_sleep(0);
+            }
+            else if ((pause_cnt & 0x1F) == 0x1F) {
+                jimi_sleep(1);
+            }
+            pause_cnt++;
+        }
+        counter++;
+    }
+}
+
+#endif
+
+#if 0
 
 template <>
 void producer_thread_proc<FixedSingleRingQueueWrapper<Message, index_type, 4096>, Message>
@@ -231,7 +291,7 @@ void run_test_queue(unsigned message_count, unsigned producers, unsigned consume
     //run_test_queue_impl<StdDequeueWrapper<Message *, native::Mutex>, Message>(message_count, producers, consumers, Capacity);
 
     //run_test_queue_impl<LockedRingQueueWrapper<Message *, native::Mutex, index_type>, Message>(message_count, producers, consumers, Capacity);
-    run_test_queue_impl<FixedLockedRingQueueWrapper<Message *, native::Mutex, index_type, Capacity>, Message>(message_count, producers, consumers, Capacity);
+    run_test_queue_impl<FixedLockedRingQueueWrapper<Message, native::Mutex, index_type, Capacity>, Message>(message_count, producers, consumers, Capacity);
 
     printf("-------------------------------------------------------------------------\n");
 
@@ -239,7 +299,24 @@ void run_test_queue(unsigned message_count, unsigned producers, unsigned consume
     //run_test_queue_impl<StdDequeueWrapper<Message *, std::mutex>, Message>(message_count, producers, consumers, Capacity);
 
     //run_test_queue_impl<LockedRingQueueWrapper<Message *, std::mutex, index_type>, Message>(message_count, producers, consumers, Capacity);
-    run_test_queue_impl<FixedLockedRingQueueWrapper<Message *, std::mutex, index_type, Capacity>, Message>(message_count, producers, consumers, Capacity);
+    run_test_queue_impl<FixedLockedRingQueueWrapper<Message, std::mutex, index_type, Capacity>, Message>(message_count, producers, consumers, Capacity);
+
+    if (producers == 1 && consumers == 1) {
+        printf("-------------------------------------------------------------------------\n");
+        run_test_queue_impl<DisruptorRingQueueWrapper<Message, sindex_type, Capacity, 1, 1, 2>, Message>(message_count, producers, consumers, Capacity);
+    }
+    else if (producers == 2 && consumers == 2) {
+        printf("-------------------------------------------------------------------------\n");
+        run_test_queue_impl<DisruptorRingQueueWrapper<Message, sindex_type, Capacity, 2, 2, 4>, Message>(message_count, producers, consumers, Capacity);
+    }
+    else if (producers == 4 && consumers == 4) {
+        printf("-------------------------------------------------------------------------\n");
+        run_test_queue_impl<DisruptorRingQueueWrapper<Message, sindex_type, Capacity, 4, 4, 8>, Message>(message_count, producers, consumers, Capacity);
+    }
+    else if (producers == 8 && consumers == 8) {
+        printf("-------------------------------------------------------------------------\n");
+        run_test_queue_impl<DisruptorRingQueueWrapper<Message, sindex_type, Capacity, 8, 8, 16>, Message>(message_count, producers, consumers, Capacity);
+    }
 
     //printf("-------------------------------------------------------------------------\n");
 }
@@ -249,6 +326,18 @@ void run_unittest()
     FixedSingleRingQueue<ValueMessage<uint32_t>, uint32_t, 1024> queue;
     DisruptorRingQueue<ValueMessage<uint32_t>, uint32_t, 1024> disruptor;
     DisruptorRingQueue<ValueMessage<uint32_t>, uint32_t, 1024>::PopThreadStackData stackData;
+    typedef DisruptorRingQueue<ValueMessage<uint32_t>, uint32_t, 1024>::Sequence sequence_type;
+
+    sequence_type tailSequence;
+    sequence_type * pTailSequence = disruptor.getGatingSequences(0);
+    if (pTailSequence == NULL)
+        pTailSequence = &tailSequence;
+    tailSequence.order_set(sequence_type::INITIAL_CURSOR_VALUE);
+    stackData.tailSequence = pTailSequence;
+    stackData.nextSequence = stackData.tailSequence->order_get();
+    stackData.cachedAvailableSequence = sequence_type::INITIAL_CURSOR_VALUE;
+    stackData.processedSequence = true;
+
     ValueMessage<uint32_t> msg;
 
     msg.set(32);
@@ -294,7 +383,9 @@ void run_unittest()
 
 int main(int argn, char * argv[])
 {
-    //run_unittest();
+#if !defined(NDEBUG)
+    run_unittest();
+#endif
 
     run_test_queue<4096>(kMaxMessageCount, 1, 1);
     run_test_queue<16384>(kMaxMessageCount, 1, 1);

@@ -40,9 +40,21 @@
     <ClInclude Include="..\..\..\src\ConcurrentQueue\ValueMessage.h">
       <Filter>src\ConcurrentQueue</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\ConcurrentQueue\DisruptorRingQueue.h">
+      <Filter>src\ConcurrentQueue</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\ConcurrentQueue\DisruptorRingQueueEx.h">
+      <Filter>src\ConcurrentQueue</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\ConcurrentQueue\sleep.h">
+      <Filter>src\ConcurrentQueue</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\ConcurrentQueue\main.cpp">
+      <Filter>src\ConcurrentQueue</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\ConcurrentQueue\sleep.c">
       <Filter>src\ConcurrentQueue</Filter>
     </ClCompile>
   </ItemGroup>
