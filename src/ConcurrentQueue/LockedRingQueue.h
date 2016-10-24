@@ -121,8 +121,8 @@ public:
     static const index_type kIndexMask = (index_type)(kCapacity - 1);
     static const size_type  kAlignment = compile_time::round_to_pow2<kCacheLineSize>::value;
 
-    template <typename U, typename T>
-    friend class LockedRingQueueAbstract;
+    //template <typename U, typename T>
+    //friend class LockedRingQueueAbstract;
 
 private:
     index_type          head_;

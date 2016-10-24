@@ -261,6 +261,7 @@ void run_unittest()
     SequenceBase<uint64_t> sequence_u64;
     SequenceBase<int64_t>  sequence_i64;
     
+#if defined(_MSC_VER)
     sequence_u64.set(1);
     printf("SequenceBase<uint64_t>::min() = %llu\n", sequence_u64.getMinValue());
     printf("SequenceBase<uint64_t>::max() = %llu\n", sequence_u64.getMaxValue());
@@ -271,6 +272,18 @@ void run_unittest()
     printf("SequenceBase<int64_t>::max() = %lld\n", sequence_i64.getMaxValue());
     printf("SequenceBase<int64_t>::value = %llu\n", sequence_i64.get());
     printf("\n");
+#else
+    sequence_u64.set(1);
+    printf("SequenceBase<uint64_t>::min() = %lu\n", sequence_u64.getMinValue());
+    printf("SequenceBase<uint64_t>::max() = %lu\n", sequence_u64.getMaxValue());
+    printf("SequenceBase<uint64_t>::value = %lu\n", sequence_u64.get());
+
+    sequence_i64.set(1);
+    printf("SequenceBase<int64_t>::min() = %ld\n", sequence_i64.getMinValue());
+    printf("SequenceBase<int64_t>::max() = %ld\n", sequence_i64.getMaxValue());
+    printf("SequenceBase<int64_t>::value = %lu\n", sequence_i64.get());
+    printf("\n");
+#endif
 }
 
 int main(int argn, char * argv[])
