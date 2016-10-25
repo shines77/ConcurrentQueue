@@ -481,35 +481,45 @@ DisruptorRingQueue<T, SequenceType, Capacity, Producers, Consumers, NumThreads>:
     static const uint32_t YIELD_THRESHOLD = 8;
 #endif
     int32_t  pause_cnt;
-    uint32_t loop_cnt, yeild_cnt, spin_cnt;
+    uint32_t loop_cnt, yield_cnt, spin_cnt;
 
     loop_cnt = 0;
     spin_cnt = 1;
     while ((availableSequence = this->cursor.order_get()) < sequence) {
         // Need yiled() or sleep() a while.
         if (loop_cnt >= YIELD_THRESHOLD) {
-            yeild_cnt = loop_cnt - YIELD_THRESHOLD;
-            if ((yeild_cnt & 63) == 63) {
+            yield_cnt = loop_cnt - YIELD_THRESHOLD;
+#if (defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)) \
+ && !(defined(WIN32) || defined(_WIN32) || defined(OS_WINDOWS) || defined(__WINDOWS))
+            if ((yield_cnt & 31) == 31) {
                 jimi_sleep(1);
             }
-            else if ((yeild_cnt & 3) == 3) {
+            else {
+                jimi_yield();
+            }
+#else
+            if ((yield_cnt & 63) == 63) {
+                jimi_sleep(1);
+            }
+            else if ((yield_cnt & 7) == 7) {
                 jimi_sleep(0);
             }
             else {
                 if (!jimi_yield()) {
                     jimi_sleep(0);
-                    //jimi_mm_pause();
                 }
             }
+#endif
         }
         else {
             for (pause_cnt = spin_cnt; pause_cnt > 0; --pause_cnt) {
                 jimi_mm_pause();
             }
-            spin_cnt = spin_cnt + 2;
+            if (spin_cnt < 8192)
+                spin_cnt = spin_cnt + 2;
         }
         loop_cnt++;
-        if (loop_cnt > 1000)
+        if (loop_cnt >= 256)
             loop_cnt = 0;
     }
 

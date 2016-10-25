@@ -19,6 +19,7 @@
 #include "LockedRingQueue.h"
 #include "SingleRingQueue.h"
 #include "DisruptorRingQueue.h"
+#include "sleep.h"
 #include "stop_watch.h"
 
 #if defined(NDEBUG)
@@ -37,6 +38,66 @@ typedef uint32_t index_type;
 typedef int32_t sindex_type;
 typedef ValueMessage<uint32_t> Message;
 #endif
+
+class this_thread_t
+{
+#if defined(USE_SEQUENCE_SPIN_LOCK) && (USE_SEQUENCE_SPIN_LOCK != 0)
+    static const size_t kYieldThreshold = 20;
+#else
+    static const size_t kYieldThreshold = 8;
+#endif
+private:
+    size_t loop_cnt;
+    size_t spin_cnt;
+
+public:
+    this_thread_t() : loop_cnt(0), spin_cnt(1) {
+    }
+    ~this_thread_t() {}
+
+    void reset() {
+        loop_cnt = 0;
+        spin_cnt = 1;
+    }
+
+    void yield() {
+        // Need yiled() or sleep() a while.
+        if (loop_cnt >= kYieldThreshold) {
+            size_t yield_cnt = loop_cnt - kYieldThreshold;
+#if (defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)) \
+ && !(defined(WIN32) || defined(_WIN32) || defined(OS_WINDOWS) || defined(__WINDOWS))
+            if ((yield_cnt & 31) == 31) {
+                jimi_sleep(1);
+            }
+            else {
+                jimi_yield();
+            }
+#else
+            if ((yield_cnt & 63) == 63) {
+                jimi_sleep(1);
+            }
+            else if ((yield_cnt & 7) == 7) {
+                jimi_sleep(0);
+            }
+            else {
+                if (!jimi_yield()) {
+                    jimi_sleep(0);
+                }
+            }
+#endif
+        }
+        else {
+            for (size_t pause_cnt = 0; pause_cnt < spin_cnt; ++pause_cnt) {
+                jimi_mm_pause();
+            }
+            if (spin_cnt < 8192)
+                spin_cnt = spin_cnt + 1;
+        }
+        loop_cnt++;
+        if (loop_cnt >= 256)
+            loop_cnt = 0;
+    }
+};
 
 #if 0
 
@@ -80,20 +141,12 @@ void producer_thread_proc(unsigned index, unsigned message_count, unsigned produ
 
     unsigned messages = message_count / producers;
     unsigned counter = 0;
-    uint32_t pause_cnt = 0;
+    this_thread_t this_thread;
     while (counter < messages) {
+        this_thread.reset();
         MessageType msg(counter);
         while (queue->push(msg) != (int)QUEUE_OP_SUCCESS) {
-            if ((pause_cnt & 0x07) != 0x07) {
-                jimi_mm_pause();
-            }
-            else if ((pause_cnt & 0x0F) == 0x0F) {
-                jimi_sleep(0);
-            }
-            else if ((pause_cnt & 0x1E) == 0x1E) {
-                jimi_sleep(1);
-            }
-            pause_cnt++;
+            this_thread.yield();
         }
         counter++;
     }
@@ -108,20 +161,12 @@ void consumer_thread_proc(unsigned index, unsigned message_count, unsigned consu
 
     unsigned messages = message_count / consumers;
     unsigned counter = 0;
-    uint32_t pause_cnt = 0;
+    this_thread_t this_thread;
     while (counter < messages) {
+       this_thread.reset();
         MessageType msg;
         while (queue->pop(msg, index) != (int)QUEUE_OP_SUCCESS) {
-            if ((pause_cnt & 0x07) != 0x07) {
-                jimi_mm_pause();
-            }
-            else if ((pause_cnt & 0x0F) == 0x0F) {
-                jimi_sleep(0);
-            }
-            else if ((pause_cnt & 0x1E) == 0x1E) {
-                jimi_sleep(1);
-            }
-            pause_cnt++;
+            this_thread.yield();
         }
         counter++;
     }
@@ -234,7 +279,7 @@ void run_test_threads(unsigned message_count, unsigned producers, unsigned consu
 }
 
 template <typename QueueType, typename MessageType>
-void run_test_queue_impl(unsigned message_count, unsigned producers, unsigned consumers, size_t initCapacity)
+void run_queue_test_impl(unsigned message_count, unsigned producers, unsigned consumers, size_t initCapacity)
 {
     printf("Test for: %s\n", typeid(QueueType).name());
     printf("\n");
@@ -250,7 +295,7 @@ void run_test_queue_impl(unsigned message_count, unsigned producers, unsigned co
 }
 
 template <typename QueueType, typename MessageType>
-void run_test_queue_impl2(unsigned message_count, unsigned producers, unsigned consumers, size_t initCapacity)
+void run_queue_test_impl2(unsigned message_count, unsigned producers, unsigned consumers, size_t initCapacity)
 {
     printf("Test for: %s\n", typeid(QueueType).name());
     printf("\n");
@@ -269,7 +314,7 @@ void run_test_queue_impl2(unsigned message_count, unsigned producers, unsigned c
 }
 
 template <size_t Capacity>
-void run_test_queue(unsigned message_count, unsigned producers, unsigned consumers)
+void run_queue_test(unsigned message_count, unsigned producers, unsigned consumers)
 {
     printf("-------------------------------------------------------------------------\n");
     printf("Messages  = %u\n", message_count);
@@ -286,41 +331,41 @@ void run_test_queue(unsigned message_count, unsigned producers, unsigned consume
 
     if (producers == 1 && consumers == 1) {
         printf("-------------------------------------------------------------------------\n");
-        run_test_queue_impl<FixedSingleRingQueueWrapper<Message, index_type, Capacity>, Message>(message_count, producers, consumers, Capacity);
+        run_queue_test_impl<FixedSingleRingQueueWrapper<Message, index_type, Capacity>, Message>(message_count, producers, consumers, Capacity);
     }
 
     printf("-------------------------------------------------------------------------\n");
 
-    //run_test_queue_impl<StdQueueWrapper<Message, native::Mutex>, Message>(message_count, producers, consumers, Capacity);
-    //run_test_queue_impl<StdDequeueWrapper<Message, native::Mutex>, Message>(message_count, producers, consumers, Capacity);
+    //run_queue_test_impl<StdQueueWrapper<Message, native::Mutex>, Message>(message_count, producers, consumers, Capacity);
+    //run_queue_test_impl<StdDequeueWrapper<Message, native::Mutex>, Message>(message_count, producers, consumers, Capacity);
 
-    //run_test_queue_impl<LockedRingQueueWrapper<Message, native::Mutex, index_type>, Message>(message_count, producers, consumers, Capacity);
-    run_test_queue_impl<FixedLockedRingQueueWrapper<Message, native::Mutex, index_type, Capacity>, Message>(message_count, producers, consumers, Capacity);
+    //run_queue_test_impl<LockedRingQueueWrapper<Message, native::Mutex, index_type>, Message>(message_count, producers, consumers, Capacity);
+    run_queue_test_impl<FixedLockedRingQueueWrapper<Message, native::Mutex, index_type, Capacity>, Message>(message_count, producers, consumers, Capacity);
 
     printf("-------------------------------------------------------------------------\n");
 
-    //run_test_queue_impl<StdQueueWrapper<Message, std::mutex>, Message>(message_count, producers, consumers, Capacity);
-    //run_test_queue_impl<StdDequeueWrapper<Message, std::mutex>, Message>(message_count, producers, consumers, Capacity);
+    //run_queue_test_impl<StdQueueWrapper<Message, std::mutex>, Message>(message_count, producers, consumers, Capacity);
+    //run_queue_test_impl<StdDequeueWrapper<Message, std::mutex>, Message>(message_count, producers, consumers, Capacity);
 
-    //run_test_queue_impl<LockedRingQueueWrapper<Message, std::mutex, index_type>, Message>(message_count, producers, consumers, Capacity);
-    run_test_queue_impl<FixedLockedRingQueueWrapper<Message, std::mutex, index_type, Capacity>, Message>(message_count, producers, consumers, Capacity);
+    //run_queue_test_impl<LockedRingQueueWrapper<Message, std::mutex, index_type>, Message>(message_count, producers, consumers, Capacity);
+    run_queue_test_impl<FixedLockedRingQueueWrapper<Message, std::mutex, index_type, Capacity>, Message>(message_count, producers, consumers, Capacity);
 
     /*
     if (producers == 1 && consumers == 1) {
         printf("-------------------------------------------------------------------------\n");
-        run_test_queue_impl<DisruptorRingQueueWrapper<Message, sindex_type, Capacity, 1, 1, 2>, Message>(message_count, producers, consumers, Capacity);
+        run_queue_test_impl<DisruptorRingQueueWrapper<Message, sindex_type, Capacity, 1, 1, 2>, Message>(message_count, producers, consumers, Capacity);
     }
     else if (producers == 2 && consumers == 2) {
         printf("-------------------------------------------------------------------------\n");
-        run_test_queue_impl<DisruptorRingQueueWrapper<Message, sindex_type, Capacity, 2, 2, 4>, Message>(message_count, producers, consumers, Capacity);
+        run_queue_test_impl<DisruptorRingQueueWrapper<Message, sindex_type, Capacity, 2, 2, 4>, Message>(message_count, producers, consumers, Capacity);
     }
     else if (producers == 4 && consumers == 4) {
         printf("-------------------------------------------------------------------------\n");
-        run_test_queue_impl<DisruptorRingQueueWrapper<Message, sindex_type, Capacity, 4, 4, 8>, Message>(message_count, producers, consumers, Capacity);
+        run_queue_test_impl<DisruptorRingQueueWrapper<Message, sindex_type, Capacity, 4, 4, 8>, Message>(message_count, producers, consumers, Capacity);
     }
     else if (producers == 8 && consumers == 8) {
         printf("-------------------------------------------------------------------------\n");
-        run_test_queue_impl<DisruptorRingQueueWrapper<Message, sindex_type, Capacity, 8, 8, 16>, Message>(message_count, producers, consumers, Capacity);
+        run_queue_test_impl<DisruptorRingQueueWrapper<Message, sindex_type, Capacity, 8, 8, 16>, Message>(message_count, producers, consumers, Capacity);
     }
     //*/
 
@@ -393,14 +438,23 @@ int main(int argn, char * argv[])
     run_unittest();
 #endif
 
-    run_test_queue<4096>(kMaxMessageCount, 1, 1);
-    run_test_queue<16384>(kMaxMessageCount, 1, 1);
+    run_queue_test<4096>(kMaxMessageCount, 1, 1);
+    run_queue_test<8192>(kMaxMessageCount, 1, 1);
+    run_queue_test<16384>(kMaxMessageCount, 1, 1);
+    run_queue_test<32768>(kMaxMessageCount, 1, 1);
+    run_queue_test<65536>(kMaxMessageCount, 1, 1);
 
-    run_test_queue<4096>(kMaxMessageCount, 2, 2);
-    run_test_queue<16384>(kMaxMessageCount, 2, 2);
+    run_queue_test<4096>(kMaxMessageCount, 2, 2);
+    run_queue_test<8192>(kMaxMessageCount, 2, 2);
+    run_queue_test<16384>(kMaxMessageCount, 2, 2);
+    run_queue_test<32768>(kMaxMessageCount, 2, 2);
+    run_queue_test<65536>(kMaxMessageCount, 2, 2);
 
-    run_test_queue<4096>(kMaxMessageCount, 4, 4);
-    run_test_queue<16384>(kMaxMessageCount, 4, 4);
+    run_queue_test<4096>(kMaxMessageCount, 4, 4);
+    run_queue_test<8192>(kMaxMessageCount, 4, 4);
+    run_queue_test<16384>(kMaxMessageCount, 4, 4);
+    run_queue_test<32768>(kMaxMessageCount, 4, 4);
+    run_queue_test<65536>(kMaxMessageCount, 4, 4);
 
     printf("-------------------------------------------------------------------------\n");
 
