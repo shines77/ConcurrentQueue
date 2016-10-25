@@ -318,7 +318,7 @@ void run_queue_test(unsigned message_count, unsigned producers, unsigned consume
     //run_queue_test_impl<LockedRingQueueWrapper<Message, std::mutex, index_type>, Message>(message_count, producers, consumers, Capacity);
     run_queue_test_impl<FixedLockedRingQueueWrapper<Message, std::mutex, index_type, Capacity>, Message>(message_count, producers, consumers, Capacity);
 
-    /*
+    ///*
     if (producers == 1 && consumers == 1) {
         printf("-------------------------------------------------------------------------\n");
         run_queue_test_impl<DisruptorRingQueueWrapper<Message, sindex_type, Capacity, 1, 1, 2>, Message>(message_count, producers, consumers, Capacity);
@@ -349,11 +349,11 @@ void run_unittest()
 
     sequence_type tailSequence;
     sequence_type * pTailSequence = disruptor.getGatingSequences(0);
-    if (pTailSequence == NULL)
+    if (pTailSequence == nullptr)
         pTailSequence = &tailSequence;
-    tailSequence.order_set(sequence_type::INITIAL_CURSOR_VALUE);
+    tailSequence.set(sequence_type::INITIAL_CURSOR_VALUE);
     stackData.tailSequence = pTailSequence;
-    stackData.nextSequence = stackData.tailSequence->order_get();
+    stackData.nextSequence = stackData.tailSequence->get();
     stackData.cachedAvailableSequence = sequence_type::INITIAL_CURSOR_VALUE;
     stackData.processedSequence = true;
 

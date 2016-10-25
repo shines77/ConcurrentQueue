@@ -50,6 +50,7 @@ public:
         COMPILER_BARRIER();
         running_ = false;
         interval_time_ = 0.0;
+        total_elapsed_time_ = 0.0;
         start_time_ = std::chrono::high_resolution_clock::now();
         running_ = true;
         COMPILER_BARRIER();
@@ -57,6 +58,7 @@ public:
 
     void start() {
         if (!running_) {
+            interval_time_ = 0.0;
             start_time_ = std::chrono::high_resolution_clock::now();
             running_ = true;
         }
@@ -83,7 +85,25 @@ public:
         running_ = false;
     }
 
-	void again() {
+    double getIntervalSecond() {
+        COMPILER_BARRIER();
+        if (!running_) {
+            std::chrono::duration<double> interval_time =
+                std::chrono::duration_cast< std::chrono::duration<double> >(stop_time_ - start_time_);
+            interval_time_ = interval_time.count();
+        }
+        return interval_time_;
+    }
+
+    double getIntervalMillisec() {
+        return getIntervalSecond() * 1000.0;
+    }
+
+    void continues() {
+        start();
+    }
+
+	void pause() {
         COMPILER_BARRIER();
         stop();
         COMPILER_BARRIER();
@@ -99,23 +119,13 @@ public:
         COMPILER_BARRIER();
         return _now.count();
     }
-   
-    double getIntervalSecond() {
-        COMPILER_BARRIER();
-        std::chrono::duration<double> interval_time = std::chrono::duration_cast< std::chrono::duration<double> >(stop_time_ - start_time_);
-        interval_time_ = interval_time.count();
-        return interval_time_;
-    }
-
-    double getIntervalMillisec() {
-        return getIntervalSecond() * 1000.0;
-    }
 
     double peekElapsedSecond() {
         COMPILER_BARRIER();
         std::chrono::time_point<high_resolution_clock> now_time = std::chrono::high_resolution_clock::now();
         COMPILER_BARRIER();
-        std::chrono::duration<double> interval_time = std::chrono::duration_cast< std::chrono::duration<double> >(now_time - start_time_);
+        std::chrono::duration<double> interval_time =
+            std::chrono::duration_cast< std::chrono::duration<double> >(now_time - start_time_);
         return interval_time.count();
     }
 
@@ -174,6 +184,7 @@ public:
         COMPILER_BARRIER();
         running_ = false;
         interval_time_ = 0.0;
+        total_elapsed_time_ = 0.0;
         start_time_ = timeGetTime();
         running_ = true;
         COMPILER_BARRIER();
@@ -181,6 +192,7 @@ public:
 
     void start() {
         if (!running_) {
+            interval_time_ = 0.0;
             start_time_ = timeGetTime();
             running_ = true;
         }
@@ -207,7 +219,23 @@ public:
         running_ = false;
     }
 
-	void again() {
+    double getIntervalSecond() {
+        COMPILER_BARRIER();
+        if (!running_) {
+            interval_time_ = (double)(stop_time_ - start_time_) / 1000.0;
+        }
+        return interval_time_;
+    }
+
+    double getIntervalMillisec() {
+        return getIntervalSecond() * 1000.0;
+    }
+
+    void continues() {
+        start();
+    }
+
+	void pause() {
         COMPILER_BARRIER();
         stop();
         COMPILER_BARRIER();
@@ -221,16 +249,6 @@ public:
         double _now = static_cast<double>(timeGetTime()) / 1000.0;
         COMPILER_BARRIER();
         return _now;
-    }
-    
-    double getIntervalSecond() {
-        COMPILER_BARRIER();
-        interval_time_ = (double)(stop_time_ - start_time_) / 1000.0;
-        return interval_time_;
-    }
-
-    double getIntervalMillisec() {
-        return getIntervalSecond() * 1000.0;
     }
 
     double peekElapsedSecond() {

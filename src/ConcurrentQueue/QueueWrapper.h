@@ -348,9 +348,9 @@ private:
         sequence_type * pTailSequence = queue_.getGatingSequences(thread_idx);
         if (pTailSequence == nullptr)
             pTailSequence = &tailSequence_[thread_idx];
-        tailSequence_[thread_idx].order_set(sequence_type::INITIAL_CURSOR_VALUE);
+        tailSequence_[thread_idx].set(sequence_type::INITIAL_CURSOR_VALUE);
         stackData_[thread_idx].tailSequence = pTailSequence;
-        stackData_[thread_idx].nextSequence = stackData_[thread_idx].tailSequence->order_get();
+        stackData_[thread_idx].nextSequence = stackData_[thread_idx].tailSequence->get();
         stackData_[thread_idx].cachedAvailableSequence = sequence_type::INITIAL_CURSOR_VALUE;
         stackData_[thread_idx].processedSequence = true;
     }

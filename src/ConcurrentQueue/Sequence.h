@@ -9,6 +9,8 @@
 
 #include "common.h"
 
+#define USE_CXX11_ATOMIC    1
+
 #if defined(_MSC_VER) || defined(__GNUC__) || defined(__GNUG__) || defined(__clang__)
 #pragma pack(push)
 #pragma pack(1)
@@ -61,19 +63,19 @@ public:
     void setMaxValue() { set(kMaxSequenceValue); }
 
     T get() const {
-        return value_.load(std::memory_order_relaxed);
-    }
-
-    void set(T value) {
-        value_.store(value, std::memory_order_relaxed);
-    }
-
-    T order_get() const {
         return value_.load(std::memory_order_acquire);
     }
 
-    void order_set(T value) {
+    void set(T value) {
         value_.store(value, std::memory_order_release);
+    }
+
+    T relax_get() const {
+        return value_.load(std::memory_order_relaxed);
+    }
+
+    void relax_set(T value) {
+        value_.store(value, std::memory_order_relaxed);
     }
 
     T explicit_get() const {
@@ -84,22 +86,27 @@ public:
         std::atomic_store_explicit(&value_, value, std::memory_order_seq_cst);
     }
 
-#if 1
+#if !defined(USE_CXX11_ATOMIC) || (USE_CXX11_ATOMIC == 0)
     T compareAndSwap(T old_value, T new_value) {
         return new_value;
     }
 #else
-    T compareAndSwap(T & old_value, T new_value) {
+    T compareAndSwap(T old_value, T new_value) {
+        T old_value_ = old_value;
         T orig_value = value_.load(std::memory_order_relaxed);
-        if (!value_.compare_exchange_weak(old_value, new_value,
-            std::memory_order_release, std::memory_order_relaxed))
-            return orig_value;
-        else
-            return old_value;
+        if (!value_.compare_exchange_weak(old_value_, new_value,
+            std::memory_order_release, std::memory_order_relaxed)) {
+            // Some value have changed, maybe is old_value, maybe is value_.
+            if (old_value_ != old_value)
+                return old_value_;
+        }
+        return orig_value;
     }
-#endif
+#endif // !USE_CXX11_ATOMIC
 
 } CACHE_ALIGN_SUFFIX;
+
+#if !defined(USE_CXX11_ATOMIC) || (USE_CXX11_ATOMIC == 0)
 
 template <>
 inline int32_t SequenceBase<int32_t>::compareAndSwap(int32_t old_value, int32_t new_value) 
@@ -124,6 +131,8 @@ inline uint64_t SequenceBase<uint64_t>::compareAndSwap(uint64_t old_value, uint6
 {
     return jimi_val_compare_and_swap64u(&(this->value_), old_value, new_value);
 }
+
+#endif // !USE_CXX11_ATOMIC
 
 #if defined(_MSC_VER) || defined(__GNUC__) || defined(__clang__)
 #pragma pack(pop)

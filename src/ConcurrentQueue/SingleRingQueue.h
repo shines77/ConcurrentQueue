@@ -87,8 +87,8 @@ public:
 
     template <typename U>
     int push(U && entry) {
-        sequence_type head = this->head_.order_get();
-        sequence_type tail = this->tail_.order_get();
+        sequence_type head = this->head_.get();
+        sequence_type tail = this->tail_.get();
         if ((head - tail) > kMask) {
             return QUEUE_OP_FAILURE;
         }
@@ -104,15 +104,15 @@ public:
         sequence_type next = head + 1;
 
         std::atomic_thread_fence(std::memory_order_acq_rel);
-        this->head_.order_set(next);
+        this->head_.set(next);
         std::atomic_thread_fence(std::memory_order_acq_rel);
 
         return QUEUE_OP_SUCCESS;
     }
 
     int pop(T & entry) {
-        sequence_type head = this->head_.order_get();
-        sequence_type tail = this->tail_.order_get();
+        sequence_type head = this->head_.get();
+        sequence_type tail = this->tail_.get();
         if ((tail == head) || (tail > head && (head - tail) > kMask)) {
             return QUEUE_OP_FAILURE;
         }
@@ -128,7 +128,7 @@ public:
         sequence_type next = tail + 1;
 
         std::atomic_thread_fence(std::memory_order_acq_rel);
-        this->tail_.order_set(next);
+        this->tail_.set(next);
         std::atomic_thread_fence(std::memory_order_acq_rel);
 
         return QUEUE_OP_SUCCESS;
