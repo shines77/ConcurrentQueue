@@ -113,7 +113,7 @@ public:
         loop_cnt_++;
         if (loop_cnt_ >= 256) {
             loop_cnt_ = 0;
-            if (sw_.peekElapsedSecond() <= timeout_)
+            if (sw_.peekElapsedMillisec() <= timeout_)
                 return false;
             else
                 return true;

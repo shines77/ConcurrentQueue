@@ -236,7 +236,7 @@ void DisruptorRingQueue<T, SequenceType, Capacity, Producers, Consumers, NumThre
     for (i = 0; i < kConsumersAlloc; ++i) {
         this->gatingSequences[i].set(cursor);
     }
-    ///*
+    /*
     for (i = 0; i < kProducersAlloc; ++i) {
         this->gatingSequenceCaches[i].set(cursor);
     }
@@ -431,7 +431,7 @@ int DisruptorRingQueue<T, SequenceType, Capacity, Producers, Consumers, NumThrea
                 current = this->workSequence.get();
                 data.nextSequence = current + 1;
                 data.tailSequence->set(current);
-#if 1
+#if 0
                 if ((current == limit) || (current > limit && (limit - current) > kIndexMask)) {
 #if 0
                     std::atomic_thread_fence(std::memory_order_acq_rel);
@@ -482,6 +482,8 @@ DisruptorRingQueue<T, SequenceType, Capacity, Producers, Consumers, NumThreads>:
 #endif
     int32_t  pause_cnt;
     uint32_t loop_cnt, yield_cnt, spin_cnt;
+    //StopWatch sw;
+    //sw.start();
 
     loop_cnt = 0;
     spin_cnt = 1;
@@ -519,8 +521,11 @@ DisruptorRingQueue<T, SequenceType, Capacity, Producers, Consumers, NumThreads>:
                 spin_cnt = spin_cnt + 2;
         }
         loop_cnt++;
-        if (loop_cnt >= 256)
+        if (loop_cnt >= 256) {
             loop_cnt = 0;
+            //if (sw.peekElapsedMillisec() > 1000.0)
+            //    break;
+        }
     }
 
     if (availableSequence < sequence)

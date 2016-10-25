@@ -82,6 +82,8 @@ public:
     int pop(item_type & item, int thread_idx) {
         return this->pop(item);
     }
+
+    void finish(int thread_idx) {}
 };
 
 template <typename T, typename MutexType>
@@ -157,6 +159,8 @@ public:
     int pop(item_type & item, int thread_idx) {
         return this->pop(item);
     }
+
+    void finish(int thread_idx) {}
 };
 
 template <typename T, typename MutexType, typename IndexType>
@@ -212,6 +216,8 @@ public:
     int pop(item_type & item, int thread_idx) {
         return this->pop(item);
     }
+
+    void finish(int thread_idx) {}
 };
 
 template <typename T, typename MutexType, typename IndexType,
@@ -268,6 +274,8 @@ public:
     int pop(item_type & item, int thread_idx) {
         return this->pop(item);
     }
+
+    void finish(int thread_idx) {}
 };
 
 template <typename T, typename SequenceType,
@@ -324,6 +332,8 @@ public:
     int pop(item_type & item, int thread_idx) {
         return this->pop(item);
     }
+
+    void finish(int thread_idx) {}
 };
 
 template <typename T, typename SequenceType,
@@ -398,4 +408,9 @@ public:
     int pop(item_type & item, int thread_idx) {
         return queue_.pop(item, stackData_[thread_idx]);
     }
+
+    void finish(int thread_idx) {
+        if (stackData_[thread_idx].tailSequence != nullptr)
+            stackData_[thread_idx].tailSequence->setMaxValue();
+    } 
 };

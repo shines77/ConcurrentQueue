@@ -12,7 +12,7 @@
 #include <mutex>
 
 #ifndef COMPILER_BARRIER
-#if defined(_MSC_VER) || defined(__INTEL_COMPILER)
+#if defined(_MSC_VER) || defined(__INTEL_COMPILER) || defined(__ICL)
 #define COMPILER_BARRIER()		_ReadWriteBarrier()
 #else
 #define COMPILER_BARRIER()		asm volatile ("" : : : "memory")

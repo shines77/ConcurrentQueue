@@ -82,10 +82,10 @@ void producer_thread_proc(unsigned index, unsigned message_count, unsigned produ
     unsigned messages = message_count / producers;
     unsigned counter = 0;
     this_thread_t this_thread;
-    this_thread.setTimeout(10.0);
+    this_thread.setTimeout(10000.0);
     while (counter < messages) {
         this_thread.reset();
-        MessageType msg(counter);
+        MessageType msg(index * messages + counter);
 #if 1
         while (queue->push(msg) != (int)QUEUE_OP_SUCCESS) {
             this_thread.yield();
@@ -100,10 +100,12 @@ void producer_thread_proc(unsigned index, unsigned message_count, unsigned produ
         }
         if (!timeout)
             counter++;
-        else
+        else {
             break;
+        }
 #endif
     }
+
     //printf("Producer Thread: thread_idx = %u, consumers = %u, message_count = %u, messages = %u, counter = %u.\n",
     //        index, producers, message_count, messages, counter);
 }
@@ -116,7 +118,7 @@ void consumer_thread_proc(unsigned index, unsigned message_count, unsigned consu
     unsigned messages = message_count / consumers;
     unsigned counter = 0;
     this_thread_t this_thread;
-    this_thread.setTimeout(10.0);
+    this_thread.setTimeout(10000.0);
     while (counter < messages) {
         this_thread.reset();
         MessageType msg;
@@ -138,6 +140,10 @@ void consumer_thread_proc(unsigned index, unsigned message_count, unsigned consu
             break;
 #endif
     }
+
+    // For disruptor, if a consumer is done, the tailSequence must be set to the Sequence max value.
+    queue->finish(index);
+
     //printf("Consumer Thread: thread_idx = %u, consumers = %u, message_count = %u, messages = %u, counter = %u.\n",
     //        index, consumers, message_count, messages, counter);
 }
@@ -297,6 +303,7 @@ void run_queue_test(unsigned message_count, unsigned producers, unsigned consume
 #endif
     printf("\n");
 
+#if 1
     if (producers == 1 && consumers == 1) {
         printf("-------------------------------------------------------------------------\n");
         run_queue_test_impl<FixedSingleRingQueueWrapper<Message, index_type, Capacity>, Message>(message_count, producers, consumers, Capacity);
@@ -317,6 +324,7 @@ void run_queue_test(unsigned message_count, unsigned producers, unsigned consume
 
     //run_queue_test_impl<LockedRingQueueWrapper<Message, std::mutex, index_type>, Message>(message_count, producers, consumers, Capacity);
     run_queue_test_impl<FixedLockedRingQueueWrapper<Message, std::mutex, index_type, Capacity>, Message>(message_count, producers, consumers, Capacity);
+#endif
 
     ///*
     if (producers == 1 && consumers == 1) {
