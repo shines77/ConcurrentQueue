@@ -168,6 +168,7 @@
     <ClInclude Include="..\..\..\src\ConcurrentQueue\Sequence.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\SingleRingQueue.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\sleep.h" />
+    <ClInclude Include="..\..\..\src\ConcurrentQueue\this_thread.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\ValueMessage.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\stop_watch.h" />
   </ItemGroup>

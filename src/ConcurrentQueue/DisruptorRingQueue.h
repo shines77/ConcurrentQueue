@@ -490,7 +490,7 @@ DisruptorRingQueue<T, SequenceType, Capacity, Producers, Consumers, NumThreads>:
         if (loop_cnt >= YIELD_THRESHOLD) {
             yield_cnt = loop_cnt - YIELD_THRESHOLD;
 #if (defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)) \
- && !(defined(WIN32) || defined(_WIN32) || defined(OS_WINDOWS) || defined(__WINDOWS))
+ && !(defined(WIN32) || defined(_WIN32) || defined(OS_WINDOWS) || defined(__WINDOWS__))
             if ((yield_cnt & 31) == 31) {
                 jimi_sleep(1);
             }

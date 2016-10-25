@@ -25,28 +25,34 @@ class StopWatch {
 private:
     std::chrono::time_point<high_resolution_clock> start_time_;
     std::chrono::time_point<high_resolution_clock> stop_time_;
-    std::chrono::duration<double> interval_time_;
+    double interval_time_;
 	double total_elapsed_time_;
     bool running_;
 
     static std::chrono::time_point<high_resolution_clock> base_time_;
 
 public:
-    StopWatch() : interval_time_{0}, total_elapsed_time_(0.0), running_(false) {
+    StopWatch() : interval_time_(0.0), total_elapsed_time_(0.0), running_(false) {
         start_time_ = std::chrono::high_resolution_clock::now();
     };
     ~StopWatch() {};
 
 	void reset() {
-        start_time_ = std::chrono::high_resolution_clock::now();
-        interval_time_ = std::chrono::duration_cast< std::chrono::duration<double> >(start_time_ - start_time_);
+        COMPILER_BARRIER();
+        interval_time_ = 0.0;
         total_elapsed_time_ = 0.0;
+        start_time_ = std::chrono::high_resolution_clock::now();
         running_ = false;
+        COMPILER_BARRIER();
 	}
 
     void restart() {
-        reset();
-        start();
+        COMPILER_BARRIER();
+        running_ = false;
+        interval_time_ = 0.0;
+        start_time_ = std::chrono::high_resolution_clock::now();
+        running_ = true;
+        COMPILER_BARRIER();
     }
 
     void start() {
@@ -78,8 +84,10 @@ public:
     }
 
 	void again() {
+        COMPILER_BARRIER();
         stop();
-		double elapsed_time = getIntervalTime();
+        COMPILER_BARRIER();
+		double elapsed_time = getIntervalSecond();
         COMPILER_BARRIER();
 		total_elapsed_time_ += elapsed_time;
 	}
@@ -92,38 +100,38 @@ public:
         return _now.count();
     }
    
-    double getIntervalTime() {
+    double getIntervalSecond() {
         COMPILER_BARRIER();
-        interval_time_ = std::chrono::duration_cast< std::chrono::duration<double> >(stop_time_ - start_time_);
-        return interval_time_.count();
+        std::chrono::duration<double> interval_time = std::chrono::duration_cast< std::chrono::duration<double> >(stop_time_ - start_time_);
+        interval_time_ = interval_time.count();
+        return interval_time_;
     }
 
     double getIntervalMillisec() {
-        return getIntervalTime() * 1000.0;
+        return getIntervalSecond() * 1000.0;
     }
 
-    double getSecond() {
-        stop();
+    double peekElapsedSecond() {
         COMPILER_BARRIER();
-        return getIntervalTime();
-    }
-
-    double getMillisec() {
-        stop();
+        std::chrono::time_point<high_resolution_clock> now_time = std::chrono::high_resolution_clock::now();
         COMPILER_BARRIER();
-        return getIntervalTime() * 1000.0;
+        std::chrono::duration<double> interval_time = std::chrono::duration_cast< std::chrono::duration<double> >(now_time - start_time_);
+        return interval_time.count();
     }
 
-    double getElapsedTime() {
-        return getSecond();
+    double peekElapsedMillisec() {
+        return peekElapsedSecond() * 1000.0;
     }
 
     double getElapsedSecond() {
-        return getSecond();
+        COMPILER_BARRIER();
+        stop();
+        COMPILER_BARRIER();
+        return getIntervalSecond();
     }
 
     double getElapsedMillisec() {
-        return getMillisec();
+        return getElapsedMillisec() * 1000.0;
     }
 
     double getTotalSecond() const {
@@ -154,15 +162,21 @@ public:
     ~StopWatch_v2() {};
 
 	void reset() {
-        start_time_ = timeGetTime();
+        COMPILER_BARRIER();
         interval_time_ = 0.0;
         total_elapsed_time_ = 0.0;
+        start_time_ = timeGetTime();
         running_ = false;
+        COMPILER_BARRIER();
 	}
 
     void restart() {
-        reset();
-        start();
+        COMPILER_BARRIER();
+        running_ = false;
+        interval_time_ = 0.0;
+        start_time_ = timeGetTime();
+        running_ = true;
+        COMPILER_BARRIER();
     }
 
     void start() {
@@ -194,8 +208,10 @@ public:
     }
 
 	void again() {
+        COMPILER_BARRIER();
         stop();
-		double elapsed_time = getIntervalTime();
+        COMPILER_BARRIER();
+		double elapsed_time = getIntervalSecond();
         COMPILER_BARRIER();
 		total_elapsed_time_ += elapsed_time;
 	}
@@ -207,38 +223,37 @@ public:
         return _now;
     }
     
-    double getIntervalTime() {
+    double getIntervalSecond() {
         COMPILER_BARRIER();
         interval_time_ = (double)(stop_time_ - start_time_) / 1000.0;
         return interval_time_;
     }
 
     double getIntervalMillisec() {
-        return getIntervalTime() * 1000.0;
+        return getIntervalSecond() * 1000.0;
     }
 
-    double getSecond() {
-        stop();
+    double peekElapsedSecond() {
         COMPILER_BARRIER();
-        return getIntervalTime();
-    }
-
-    double getMillisec() {
-        stop();
+        size_t now_time = timeGetTime();
         COMPILER_BARRIER();
-        return getIntervalTime() * 1000.0;
+        double interval_time = (double)(now_time - start_time_) / 1000.0;
+        return interval_time;
     }
 
-    double getElapsedTime() {
-        return getSecond();
+    double peekElapsedMillisec() {
+        return peekElapsedSecond() * 1000.0;
     }
 
     double getElapsedSecond() {
-        return getSecond();
+        COMPILER_BARRIER();
+        stop();
+        COMPILER_BARRIER();
+        return getIntervalSecond();
     }
 
     double getElapsedMillisec() {
-        return getMillisec();
+        return getElapsedSecond() * 1000.0;
     }
 
     double getTotalSecond() const {
@@ -251,6 +266,9 @@ public:
         return total_elapsed_time_ * 1000.0;
     }
 };
+
+#else
+typedef StopWatch StopWatch_v2;
 #endif // _WIN32
 
 #if defined(_WIN32) || defined(WIN32) || defined(OS_WINDOWS) || defined(__WINDOWS__)

@@ -49,6 +49,9 @@
     <ClInclude Include="..\..\..\src\ConcurrentQueue\sleep.h">
       <Filter>src\ConcurrentQueue</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\ConcurrentQueue\this_thread.h">
+      <Filter>src\ConcurrentQueue</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\ConcurrentQueue\main.cpp">

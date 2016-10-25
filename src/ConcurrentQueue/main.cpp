@@ -19,7 +19,7 @@
 #include "LockedRingQueue.h"
 #include "SingleRingQueue.h"
 #include "DisruptorRingQueue.h"
-#include "sleep.h"
+#include "this_thread.h"
 #include "stop_watch.h"
 
 #if defined(NDEBUG)
@@ -38,66 +38,6 @@ typedef uint32_t index_type;
 typedef int32_t sindex_type;
 typedef ValueMessage<uint32_t> Message;
 #endif
-
-class this_thread_t
-{
-#if defined(USE_SEQUENCE_SPIN_LOCK) && (USE_SEQUENCE_SPIN_LOCK != 0)
-    static const size_t kYieldThreshold = 20;
-#else
-    static const size_t kYieldThreshold = 8;
-#endif
-private:
-    size_t loop_cnt;
-    size_t spin_cnt;
-
-public:
-    this_thread_t() : loop_cnt(0), spin_cnt(1) {
-    }
-    ~this_thread_t() {}
-
-    void reset() {
-        loop_cnt = 0;
-        spin_cnt = 1;
-    }
-
-    void yield() {
-        // Need yiled() or sleep() a while.
-        if (loop_cnt >= kYieldThreshold) {
-            size_t yield_cnt = loop_cnt - kYieldThreshold;
-#if (defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)) \
- && !(defined(WIN32) || defined(_WIN32) || defined(OS_WINDOWS) || defined(__WINDOWS))
-            if ((yield_cnt & 31) == 31) {
-                jimi_sleep(1);
-            }
-            else {
-                jimi_yield();
-            }
-#else
-            if ((yield_cnt & 63) == 63) {
-                jimi_sleep(1);
-            }
-            else if ((yield_cnt & 7) == 7) {
-                jimi_sleep(0);
-            }
-            else {
-                if (!jimi_yield()) {
-                    jimi_sleep(0);
-                }
-            }
-#endif
-        }
-        else {
-            for (size_t pause_cnt = 0; pause_cnt < spin_cnt; ++pause_cnt) {
-                jimi_mm_pause();
-            }
-            if (spin_cnt < 8192)
-                spin_cnt = spin_cnt + 1;
-        }
-        loop_cnt++;
-        if (loop_cnt >= 256)
-            loop_cnt = 0;
-    }
-};
 
 #if 0
 
@@ -142,13 +82,27 @@ void producer_thread_proc(unsigned index, unsigned message_count, unsigned produ
     unsigned messages = message_count / producers;
     unsigned counter = 0;
     this_thread_t this_thread;
+    this_thread.setTimeout(10.0);
     while (counter < messages) {
         this_thread.reset();
         MessageType msg(counter);
+#if 1
         while (queue->push(msg) != (int)QUEUE_OP_SUCCESS) {
             this_thread.yield();
         }
         counter++;
+#else
+        bool timeout = false;
+        while (queue->push(msg) != (int)QUEUE_OP_SUCCESS) {
+            timeout = this_thread.yield_timeout();
+            if (timeout)
+                break;
+        }
+        if (!timeout)
+            counter++;
+        else
+            break;
+#endif
     }
     //printf("Producer Thread: thread_idx = %u, consumers = %u, message_count = %u, messages = %u, counter = %u.\n",
     //        index, producers, message_count, messages, counter);
@@ -162,13 +116,27 @@ void consumer_thread_proc(unsigned index, unsigned message_count, unsigned consu
     unsigned messages = message_count / consumers;
     unsigned counter = 0;
     this_thread_t this_thread;
+    this_thread.setTimeout(10.0);
     while (counter < messages) {
-       this_thread.reset();
+        this_thread.reset();
         MessageType msg;
+#if 1
         while (queue->pop(msg, index) != (int)QUEUE_OP_SUCCESS) {
             this_thread.yield();
         }
         counter++;
+#else
+        bool timeout = false;
+        while (queue->pop(msg, index) != (int)QUEUE_OP_SUCCESS) {
+            timeout = this_thread.yield_timeout();
+            if (timeout)
+                break;
+        }
+        if (!timeout)
+            counter++;
+        else
+            break;
+#endif
     }
     //printf("Consumer Thread: thread_idx = %u, consumers = %u, message_count = %u, messages = %u, counter = %u.\n",
     //        index, consumers, message_count, messages, counter);
