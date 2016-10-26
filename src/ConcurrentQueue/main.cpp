@@ -331,6 +331,10 @@ void run_queue_test(unsigned message_count, unsigned producers, unsigned consume
         printf("-------------------------------------------------------------------------\n");
         run_queue_test_impl<DisruptorRingQueueWrapper<Message, sindex_type, Capacity, 1, 1, 2>, Message>(message_count, producers, consumers, Capacity);
     }
+    else if (producers == 1 && consumers == 3) {
+        printf("-------------------------------------------------------------------------\n");
+        run_queue_test_impl<DisruptorRingQueueWrapper<Message, sindex_type, Capacity, 1, 3, 4>, Message>(message_count, producers, consumers, Capacity);
+    }
     else if (producers == 2 && consumers == 2) {
         printf("-------------------------------------------------------------------------\n");
         run_queue_test_impl<DisruptorRingQueueWrapper<Message, sindex_type, Capacity, 2, 2, 4>, Message>(message_count, producers, consumers, Capacity);
@@ -419,6 +423,12 @@ int main(int argn, char * argv[])
     run_queue_test<16384>(kMaxMessageCount, 1, 1);
     run_queue_test<32768>(kMaxMessageCount, 1, 1);
     run_queue_test<65536>(kMaxMessageCount, 1, 1);
+
+    run_queue_test<4096>(kMaxMessageCount, 1, 3);
+    run_queue_test<8192>(kMaxMessageCount, 1, 3);
+    run_queue_test<16384>(kMaxMessageCount, 1, 3);
+    run_queue_test<32768>(kMaxMessageCount, 1, 3);
+    run_queue_test<65536>(kMaxMessageCount, 1, 3);
 
     run_queue_test<4096>(kMaxMessageCount, 2, 2);
     run_queue_test<8192>(kMaxMessageCount, 2, 2);

@@ -31,7 +31,7 @@ public:
     static const T kMaxSequenceValue;
 
 protected:
-    CACHE_ALIGN_PREFIX std::atomic<T>  value_ CACHE_ALIGN_SUFFIX;
+    CACHE_ALIGN_PREFIX std::atomic<T> value_ CACHE_ALIGN_SUFFIX;
     char padding[(JIMI_CACHELINE_SIZE >= sizeof(std::atomic<T>))
                  ? (JIMI_CACHELINE_SIZE - sizeof(std::atomic<T>))
                  : ((sizeof(std::atomic<T>) - JIMI_CACHELINE_SIZE) & (JIMI_CACHELINE_SIZE - 1))];
