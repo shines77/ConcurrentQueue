@@ -11,6 +11,7 @@
 #include <mutex>
 #include <thread>
 #include <chrono>
+#include <functional>
 #include <type_traits>
 
 #include "common.h"
@@ -421,37 +422,38 @@ enum signal_slot {
 
 class FooA {
 public:
-    void OnValueChange(int index) {
-        std::cout << "FooA::OnValueChange(int index): index = " << index << std::endl;
+    void onValueChange(int index) {
+        std::cout << "FooA::onValueChange(int index): index = " << index << std::endl;
     }
 };
 
 class FooB {
 public:
-    void OnValueChange(int index) {
-        std::cout << "FooB::OnValueChange(int index): index = " << index << std::endl;
+    void onValueChange(int index) {
+        std::cout << "FooB::onValueChange(int index): index = " << index << std::endl;
     }
 };
 
 void test_signal()
 {
+    using namespace std::placeholders;
     typedef jimi::signal<> signal_0;
-    signal_0 & signal_inst1 = signal_0::get();
+    signal_0 & signal_0_inst = signal_0::get();
 
-    signal_inst1.connect(signal_slot::OnValueChange, []() { std::cout << "lambda::OnValueChange()." << std::endl; });
-    signal_inst1.emit(signal_slot::OnValueChange);
-    signal_inst1.disconnect(signal_slot::OnValueChange);
+    signal_0_inst.connect(signal_slot::OnValueChange, []() { std::cout << "lambda::onValueChange()." << std::endl; });
+    signal_0_inst.emit(signal_slot::OnValueChange);
+    signal_0_inst.disconnect(signal_slot::OnValueChange);
 
     typedef jimi::signal<int> signal_int;
-    signal_int & signal_inst2 = signal_int::get();
+    signal_int & signal_int_inst = signal_int::get();
 
     FooA a; FooB b;
-    std::function<void(int)> memfunc_a = std::bind(&FooA::OnValueChange, &a, std::placeholders::_1);
-    std::function<void(int)> memfunc_b = std::bind(&FooB::OnValueChange, &b, std::placeholders::_1);
-    signal_inst2.connect(signal_slot::OnValueChange, memfunc_a);
-    signal_inst2.connect(signal_slot::OnValueChange, memfunc_b);
-    signal_inst2.emit(signal_slot::OnValueChange, 100);
-    signal_inst2.disconnect(signal_slot::OnValueChange);
+    std::function<void(int)> memfunc_a = std::bind(&FooA::onValueChange, &a, _1);
+    std::function<void(int)> memfunc_b = std::bind(&FooB::onValueChange, &b, _1);
+    signal_int_inst.connect(signal_slot::OnValueChange, memfunc_a);
+    signal_int_inst.connect(signal_slot::OnValueChange, memfunc_b);
+    signal_int_inst.emit(signal_slot::OnValueChange, 100);
+    signal_int_inst.disconnect(signal_slot::OnValueChange);
 }
 
 int main(int argn, char * argv[])
