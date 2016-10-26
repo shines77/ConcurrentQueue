@@ -19,9 +19,9 @@
 #define JIMI_ALIGNED_TO(n, alignment)   \
     (((n) + ((alignment) - 1)) & ~(size_t)((alignment) - 1))
 
-///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////
 // class DisruptorRingQueue<T, SequenceType, Capacity, Producers, Consumers, NumThreads>
-///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////
 
 template <typename T, typename SequenceType = int64_t, uint32_t Capacity = 1024U,
           uint32_t Producers = 0, uint32_t Consumers = 0, uint32_t NumThreads = 0>
@@ -79,7 +79,7 @@ protected:
     flag_type *     availableBuffer;
 
 public:
-    DisruptorRingQueue(bool bFillQueue = true) {
+    DisruptorRingQueue(bool bFillQueue = true) : entries(nullptr), availableBuffer(nullptr) {
         init(bFillQueue);
     }
 
@@ -100,7 +100,7 @@ public:
 
 public:
     static sequence_type getMinimumSequence(const Sequence *sequences, const Sequence &workSequence,
-                                            sequence_type mininum) {
+                                            sequence_type current) {
         assert(sequences != nullptr);
 
 #if 0
@@ -121,10 +121,10 @@ public:
         if (cachedWorkSequence < minSequence)
             minSequence = cachedWorkSequence;
 
-        if (mininum < minSequence)
-            minSequence = mininum;
+        if (current < minSequence)
+            minSequence = current;
 #else
-        sequence_type minSequence = mininum;
+        sequence_type minSequence = current;
         for (size_type i = 0; i < kConsumers; ++i) {
             sequence_type seq = sequences->get();
 #if 1
@@ -159,22 +159,21 @@ public:
         printf("\n");
     }
 
-    index_type mask() const     { return kIndexMask; };
-    size_type  capacity() const { return kCapacity;  };
-    size_type  length() const   { return sizes();    };
+    index_type mask() const     { return kIndexMask; }
+    size_type  capacity() const { return kCapacity;  }
+    size_type  length() const   { return sizes();    }
+    bool       is_empty() const { return (sizes() == 0); }
 
     size_type  sizes() const {
         sequence_type head, tail;
 
         std::atomic_thread_fence(std::memory_order_acq_rel);
-
         head = this->cursor.get();
         tail = this->workSequence.get();
+        std::atomic_thread_fence(std::memory_order_acq_rel);
 
         return (size_type)((head - tail) <= kIndexMask) ? (head - tail) : (size_type)(-1);
     }
-
-    bool is_empty() const { return (sizes() == 0); }
 
     void init(bool bFillQueue = true) {
         this->cursor.set(Sequence::INITIAL_CURSOR_VALUE);
@@ -183,11 +182,10 @@ public:
         for (size_type i = 0; i < kConsumersAlloc; ++i) {
             this->gatingSequences[i].set(Sequence::INITIAL_CURSOR_VALUE);
         }
-
         init_queue(bFillQueue);
 
 #if defined(_DEBUG) || !defined(NDEBUG)
-#if 0
+  #if 0
         printf("kProducers      = %lu\n", kProducers);
         printf("kConsumers      = %lu\n", kConsumers);
         printf("kConsumersAlloc = %lu\n", kConsumersAlloc);
@@ -195,7 +193,7 @@ public:
         printf("kIndexMask      = %lu\n", kIndexMask);
         printf("kIndexShift     = %lu\n", kIndexShift);
         printf("\n");
-#endif
+  #endif
 #endif  /* _DEBUG */
     }
 

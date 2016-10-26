@@ -99,6 +99,8 @@ public:
             // Some value have changed, maybe is old_value, maybe is value_.
             if (old_value_ != old_value)
                 return old_value_;
+            else
+                return new_value;
         }
         return orig_value;
     }
