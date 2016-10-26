@@ -412,12 +412,57 @@ void run_unittest()
 #endif
 }
 
+#include "QtSignal.h"
+
+enum signal_slot {
+    OnValueChange,
+    OnScrollChange
+};
+
+class FooA {
+public:
+    void OnValueChange(int index) {
+        std::cout << "FooA::OnValueChange(int index): index = " << index << std::endl;
+    }
+};
+
+class FooB {
+public:
+    void OnValueChange(int index) {
+        std::cout << "FooB::OnValueChange(int index): index = " << index << std::endl;
+    }
+};
+
+void test_signal()
+{
+    typedef jimi::signal<> signal_0;
+    signal_0 & signal_inst1 = signal_0::get();
+
+    signal_inst1.connect(signal_slot::OnValueChange, []() { std::cout << "lambda::OnValueChange()." << std::endl; });
+    signal_inst1.emit(signal_slot::OnValueChange);
+    signal_inst1.disconnect(signal_slot::OnValueChange);
+
+    typedef jimi::signal<int> signal_int;
+    signal_int & signal_inst2 = signal_int::get();
+
+    FooA a; FooB b;
+    std::function<void(int)> memfunc_a = std::bind(&FooA::OnValueChange, &a, std::placeholders::_1);
+    std::function<void(int)> memfunc_b = std::bind(&FooB::OnValueChange, &b, std::placeholders::_1);
+    signal_inst2.connect(signal_slot::OnValueChange, memfunc_a);
+    signal_inst2.connect(signal_slot::OnValueChange, memfunc_b);
+    signal_inst2.emit(signal_slot::OnValueChange, 100);
+    signal_inst2.disconnect(signal_slot::OnValueChange);
+}
+
 int main(int argn, char * argv[])
 {
 #if !defined(NDEBUG)
     run_unittest();
 #endif
 
+    test_signal();
+
+#if 0
     run_queue_test<4096>(kMaxMessageCount, 1, 1);
     run_queue_test<8192>(kMaxMessageCount, 1, 1);
     run_queue_test<16384>(kMaxMessageCount, 1, 1);
@@ -443,8 +488,9 @@ int main(int argn, char * argv[])
     run_queue_test<65536>(kMaxMessageCount, 4, 4);
 
     printf("-------------------------------------------------------------------------\n");
+#endif
 
-#if defined(_WIN32) && defined(NDEBUG)
+#if defined(_WIN32) && (defined(NDEBUG) || !defined(NDEBUG))
     system("pause");
 #endif
     return 0;

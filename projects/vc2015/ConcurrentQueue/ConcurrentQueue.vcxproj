@@ -164,6 +164,8 @@
     <ClInclude Include="..\..\..\src\ConcurrentQueue\MinMax.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\NativeMutex.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\PowerOf2.h" />
+    <ClInclude Include="..\..\..\src\ConcurrentQueue\QtSignal.h" />
+    <ClInclude Include="..\..\..\src\ConcurrentQueue\QtSignalImpl.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\QueueWrapper.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\Sequence.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\SingleRingQueue.h" />
