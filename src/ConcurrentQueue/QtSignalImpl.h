@@ -275,7 +275,7 @@ public:
 #if 1
         // Because when std::multimap earse a item, the iterator will be invalid.
         // So we record the delete iterators on the first run.
-        std::vector<std::multimap<std::size_t, slot_type>::iterator> del_iters;
+        std::vector<typename std::multimap<std::size_t, slot_type>::iterator> del_iters;
         for (auto iter = slots_.begin(); iter != slots_.end(); ++iter) {
             if (iter->first == key) {
                 del_iters.push_back(iter);
