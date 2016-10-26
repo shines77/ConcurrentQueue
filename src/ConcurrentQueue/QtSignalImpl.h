@@ -311,8 +311,6 @@ public:
 private:
     //template <typename T, typename P, typename Q, typename Args...>
     //friend class signal_accumulator;
-    //template <class, class, class, class...>
-    //friend class signal_accumulator;
 
     struct disconnector : detail::disconnector
     {
