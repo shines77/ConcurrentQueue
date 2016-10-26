@@ -141,7 +141,7 @@ void consumer_thread_proc(unsigned index, unsigned message_count, unsigned consu
 #endif
     }
 
-    // For disruptor, if a consumer is done, the tailSequence must be set to the Sequence max value.
+    // For disruptor, if a consumer have done, the tailSequence must be set to the Sequence max value.
     queue->finish(index);
 
     //printf("Consumer Thread: thread_idx = %u, consumers = %u, message_count = %u, messages = %u, counter = %u.\n",
@@ -360,8 +360,8 @@ void run_unittest()
     if (pTailSequence == nullptr)
         pTailSequence = &tailSequence;
     tailSequence.set(sequence_type::INITIAL_CURSOR_VALUE);
-    stackData.tailSequence = pTailSequence;
-    stackData.nextSequence = stackData.tailSequence->get();
+    stackData.pTailSequence = pTailSequence;
+    stackData.nextSequence = stackData.pTailSequence->get();
     stackData.cachedAvailableSequence = sequence_type::INITIAL_CURSOR_VALUE;
     stackData.processedSequence = true;
 

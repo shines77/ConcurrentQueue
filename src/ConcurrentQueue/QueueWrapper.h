@@ -359,8 +359,8 @@ private:
         if (pTailSequence == nullptr)
             pTailSequence = &tailSequence_[thread_idx];
         tailSequence_[thread_idx].set(sequence_type::INITIAL_CURSOR_VALUE);
-        stackData_[thread_idx].tailSequence = pTailSequence;
-        stackData_[thread_idx].nextSequence = stackData_[thread_idx].tailSequence->get();
+        stackData_[thread_idx].pTailSequence = pTailSequence;
+        stackData_[thread_idx].nextSequence = stackData_[thread_idx].pTailSequence->get();
         stackData_[thread_idx].cachedAvailableSequence = sequence_type::INITIAL_CURSOR_VALUE;
         stackData_[thread_idx].processedSequence = true;
     }
@@ -410,7 +410,7 @@ public:
     }
 
     void finish(int thread_idx) {
-        if (stackData_[thread_idx].tailSequence != nullptr)
-            stackData_[thread_idx].tailSequence->setMaxValue();
+        if (stackData_[thread_idx].pTailSequence != nullptr)
+            stackData_[thread_idx].pTailSequence->setMaxValue();
     } 
 };
