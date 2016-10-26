@@ -344,10 +344,10 @@ private:
 };
 
 template <typename T>
-using safe_signal = signal_type<multi_thread_policy, T>;
+using safe_signal_impl = signal_type<multi_thread_policy, T>;
 
 template <typename T>
-using unsafe_signal = signal_type<singel_thread_policy, T>;
+using unsafe_signal_impl = signal_type<singel_thread_policy, T>;
 
 } // namespace jimi
 

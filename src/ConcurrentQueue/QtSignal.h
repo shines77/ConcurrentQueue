@@ -20,7 +20,7 @@ public:
 	}
 
 	template <typename T>
-	jimi::connection connect(int key, T && slot)
+	connection connect(int key, T && slot)
 	{
 		return signal_.connect(key, std::forward<T>(slot));
 	}
@@ -40,7 +40,41 @@ private:
 	signal(const signal &) = delete;
 	signal(signal &&) = delete;
 
-	jimi::safe_signal<void(Args...)> signal_;
+	safe_signal_impl<void(Args...)> signal_;
+};
+
+template <typename ...Args>
+class unsafe_signal
+{
+public:
+	static unsafe_signal & get()
+	{
+		static unsafe_signal instance;
+		return instance;
+	}
+
+	template <typename T>
+	connection connect(int key, T && slot)
+	{
+		return signal_.connect(key, std::forward<T>(slot));
+	}
+
+	void disconnect(int key)
+	{
+		signal_.disconnect(key);
+	}
+
+	void emit(int key, Args && ...args)
+	{
+		signal_(key, std::forward<Args>(args)...);
+	}
+
+private:
+	unsafe_signal() = default;
+	unsafe_signal(const unsafe_signal &) = delete;
+	unsafe_signal(unsafe_signal &&) = delete;
+
+	unsafe_signal_impl<void(Args...)> signal_;
 };
 
 } // namespace jimi
