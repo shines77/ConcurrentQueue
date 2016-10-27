@@ -19,6 +19,8 @@
 #include <iterator>     // std::back_inserter
 #include <map>          // std::multimap<T>
 
+#include "Functional.h"
+
 namespace jimi {
 
 // implementational details
@@ -37,9 +39,8 @@ namespace detail {
 
 } // namespace detail
 
-template <typename ThreadPolicy, typename T>
-//template <typename ThreadPolicy, typename R, typename ...Args>
-class signal_type;
+template <typename ThreadPolicy, typename Func>
+class signal_impl;
 
 class connection
 {
@@ -83,8 +84,8 @@ public:
     }
 
 private:
-	template <typename ThreadPolicy, typename T>
-    friend class signal_type;
+	template <typename ThreadPolicy, typename Func>
+    friend class signal_impl;
 
 	connection(std::size_t index, std::size_t key,
                std::shared_ptr<detail::disconnector> const & shared_disconnector) :
@@ -110,13 +111,13 @@ public:
         connection_(std::forward<connection>(conn)) {
     }
 
-    ~scoped_connection() {
-        disconnect();
-    }
-
     scoped_connection & operator =(connection && conn) {
         reset(std::forward<connection>(conn));
         return (*this);
+    }
+
+    ~scoped_connection() {
+        disconnect();
     }
 
     void reset(connection && conn = {}) {
@@ -176,15 +177,15 @@ struct multi_thread_policy
 };
 
 template <typename ThreadPolicy, typename R, typename ...Args>
-class signal_type<ThreadPolicy, R(Args...)>
+class signal_impl<ThreadPolicy, R(Args...)>
 {
 public:
     /// Type that will be used to store the slots for this signal type.
     using slot_type = std::function<R(Args...)>;
     /// Type that is used for counting the slots connected to this signal.
     using size_type = typename std::vector<slot_type>::size_type;
-    //
-    using this_type = signal_type<ThreadPolicy, R(Args...)>;
+    /// Type of this signal class.
+    using this_type = signal_impl<ThreadPolicy, R(Args...)>;
 
 private:
     /// Thread policy currently in use
@@ -194,7 +195,7 @@ private:
     /// Type of mutex lock, provided by threading policy
     using mutex_lock_type = typename thread_policy::mutex_lock_type;
 
-    // Forward declaration
+    /// Forward declaration
     struct disconnector;
 
     /// Mutex to syncronize access to the slot vector
@@ -212,15 +213,15 @@ private:
 
 public:
     /// signals are not copy constructible
-    signal_type(signal_type const &) = delete;
+    signal_impl(signal_impl const &) = delete;
     /// signals are not copy assignable
-    signal_type & operator = (signal_type const &) = delete;
+    signal_impl & operator = (signal_impl const &) = delete;
 
     /// signals are default constructible
-    signal_type() : slot_count_(0) {}
+    signal_impl() : slot_count_(0) {}
 
     // Destruct the signal object.
-    ~signal_type() {
+    ~signal_impl() {
         // If we are unlucky, some of the connected slots
         // might be in the process of disconnecting from other threads.
         // If this happens, we are risking to destruct the disconnector
@@ -309,24 +310,25 @@ public:
     }
 
 private:
-    //template <typename T, typename P, typename Q, typename Args...>
+    //template <typename ThreadPolicy, typename T, typename R, typename Args...>
     //friend class signal_accumulator;
 
     struct disconnector : detail::disconnector
     {
-        disconnector() : ptr_(nullptr) {}
-        disconnector(this_type * ptr) : ptr_(ptr) {}
+        disconnector() : signal_host_(nullptr) {}
+        disconnector(this_type * ptr) : signal_host_(ptr) {}
 
         void operator () (std::size_t key) const override {
-            if (ptr_) {
-                ptr_->disconnect(key);
+            if (signal_host_) {
+                signal_host_->disconnect(key);
             }
         }
 
         /// Pointer to the current signal.
-        this_type * ptr_;
+        this_type * signal_host_;
     };
 
+    ///
     /// Retrieve a copy of the current slots
     ///
     /// It's useful and necessary to copy the slots so we don't need
@@ -334,6 +336,7 @@ private:
     /// we prevent the called slots from modifying the slots vector.
     /// This simple "double buffering" will allow slots to disconnect
     /// themself or other slots and connect new slots.
+    ///
     std::multimap<std::size_t, slot_type> copy_slots() const
     {
         mutex_lock_type lock{ mutex_ };
@@ -342,10 +345,10 @@ private:
 };
 
 template <typename T>
-using safe_signal_impl = signal_type<multi_thread_policy, T>;
+using safe_signal_impl = signal_impl<multi_thread_policy, T>;
 
 template <typename T>
-using unsafe_signal_impl = signal_type<singel_thread_policy, T>;
+using unsafe_signal_impl = signal_impl<singel_thread_policy, T>;
 
 } // namespace jimi
 

@@ -160,6 +160,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\src\ConcurrentQueue\common.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\DisruptorRingQueue.h" />
+    <ClInclude Include="..\..\..\src\ConcurrentQueue\Functional.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\LockedRingQueue.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\MinMax.h" />
     <ClInclude Include="..\..\..\src\ConcurrentQueue\NativeMutex.h" />
