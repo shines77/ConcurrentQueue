@@ -57,14 +57,5 @@
     <ClInclude Include="..\..\..\src\ConcurrentQueue\this_thread.h">
       <Filter>src\ConcurrentQueue</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\ConcurrentQueue\QtSignal.h">
-      <Filter>src\ConcurrentQueue</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\ConcurrentQueue\QtSignalImpl.h">
-      <Filter>src\ConcurrentQueue</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\ConcurrentQueue\Functional.h">
-      <Filter>src\ConcurrentQueue</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>
