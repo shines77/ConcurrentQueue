@@ -13,81 +13,75 @@
 #include "common.h"
 #include "PowerOf2.h"
 
-template <typename ImplType, typename ItemType>
+template <typename T, typename ItemType, typename MutexType>
 class LockedRingQueueAbstract {
 public:
-    typedef LockedRingQueueAbstract<ImplType, ItemType>   this_type;
-    typedef LockedRingQueueAbstract<ImplType, ItemType> * pthis_type;
-
-    typedef ImplType            impl_type;
-    typedef ImplType *          pimpl_type;
-    typedef ImplType const *    const_pimpl_type;
+    typedef T                   impl_type;
     typedef ItemType            item_type;
+    typedef MutexType           mutex_type;
     typedef std::size_t         size_type;
+
+    typedef LockedRingQueueAbstract<T, ItemType, MutexType> this_type;
 
 public:
     LockedRingQueueAbstract() {}
     virtual ~LockedRingQueueAbstract() {}
 
 private:
-    inline pimpl_type staic_cast_this() {
-        pimpl_type pThis = static_cast<pimpl_type>(this);
+    inline impl_type * staic_cast_to_this() {
+        impl_type * pThis = static_cast<impl_type *>(this);
         assert(pThis != nullptr);
         return pThis;
     }
 
-    inline const_pimpl_type const_cast_this() const {
-        pthis_type pOrigThisNonConst = const_cast<pthis_type>(this);
-        pimpl_type pThisNonConst = static_cast<pimpl_type>(pOrigThisNonConst);
-        const_pimpl_type pThisConst = const_cast<const_pimpl_type>(pThisNonConst);
+    inline const impl_type * const_cast_to_this() const {
+        this_type * pOrigThis = const_cast<this_type *>(this);
+        impl_type * pThisNonConst = static_cast<impl_type *>(pOrigThis);
+        const impl_type * pThisConst = const_cast<const impl_type *>(pThisNonConst);
         assert(pThisConst != nullptr);
         return pThisConst;
     }
 
 public:
     bool is_valid() const {
-        const_pimpl_type pThis = const_cast_this();
+        const impl_type * pThis = const_cast_to_this();
         return (pThis->entries_ != nullptr);
     }
 
     bool is_empty() const {
-        const_pimpl_type pThis = const_cast_this();
-        bool _isEmpty;
-        pThis->mutex_.lock();
-        _isEmpty = (pThis->head_ == pThis->tail_);
-        pThis->mutex_.unlock();
+        const impl_type * pThis = const_cast_to_this();
+        std::unique_lock<mutex_type> lock(pThis->mutex_);
+        bool _isEmpty = (pThis->head_ == pThis->tail_);
         assert((pThis->head_ - pThis->tail_) <= pThis->capacity());
         return _isEmpty;
     }
 
     size_type capacity() const {
-        const_pimpl_type pThis = const_cast_this();
+        const impl_type * pThis = const_cast_to_this();
         return pThis->capacity_;
     }
 
     size_type sizes() const {
-        const_pimpl_type pThis = const_cast_this();
-        size_type size;
-        pThis->mutex_.lock();
-        size = pThis->head_ - pThis->tail_;
-        pThis->mutex_.unlock();
+        const impl_type * pThis = const_cast_to_this();
+        std::unique_lock<mutex_type> lock(pThis->mutex_);
+        size_type size = pThis->head_ - pThis->tail_;
         assert(size <= pThis->capacity());
         return size;
     }
 
     int push_front(item_type const & item) {
-        pimpl_type pThis = staic_cast_this();
-        return pThis->inner_push_front(item);
+        impl_type * pThis = staic_cast_to_this();
+        return pThis->push_front_impl(item);
     }
 
     int push_front(item_type && item) {
-        pimpl_type pThis = staic_cast_this();
-        return pThis->inner_push_front(std::move(item));
+        impl_type * pThis = staic_cast_to_this();
+        return pThis->push_front_impl(std::move(item));
     }
 
     int pop_back(item_type & item) {
-        pimpl_type pThis = staic_cast_this();
-        return pThis->inner_pop_back(item);
+        impl_type * pThis = staic_cast_to_this();
+        return pThis->pop_back_impl(item);
     }
 
     int push(item_type const & item) {
@@ -107,7 +101,8 @@ template <typename T, typename MutexType = std::mutex,
           typename IndexType = uint64_t,
           size_t InitCapacity = kQueueDefaultCapacity>
 class FixedLockedRingQueue :
-    public LockedRingQueueAbstract<FixedLockedRingQueue<T, MutexType, IndexType, InitCapacity>, T> {
+    public LockedRingQueueAbstract<FixedLockedRingQueue<T, MutexType, IndexType, InitCapacity>,
+                                   T, MutexType> {
 public:
     typedef T               item_type;
     typedef T *             value_type;
@@ -182,7 +177,7 @@ protected:
 
 public:
     template <typename U>
-    int inner_push_front(U && item) {
+    int push_front_impl(U && item) {
         mutex_.lock();
 
         if ((head_ - tail_) > kCapacity) {
@@ -201,7 +196,7 @@ public:
     }
 
     template <typename U>
-    int inner_pop_back(U & item) {
+    int pop_back_impl(U & item) {
         mutex_.lock();
 
         if (head_ == tail_) {
@@ -229,7 +224,8 @@ public:
 template <typename T, typename MutexType = std::mutex,
           typename IndexType = uint64_t>
 class LockedRingQueue :
-    public LockedRingQueueAbstract<LockedRingQueue<T, MutexType, IndexType>, T> {
+    public LockedRingQueueAbstract<LockedRingQueue<T, MutexType, IndexType>,
+                                   T, MutexType> {
 public:
     typedef T               item_type;
     typedef T *             value_type;
@@ -330,7 +326,7 @@ protected:
 
 public:
     template <typename U>
-    int inner_push_front(U && item) {
+    int push_front_impl(U && item) {
         mutex_.lock();
 
         if ((head_ - tail_) > capacity_) {
@@ -349,7 +345,7 @@ public:
     }
 
     template <typename U>
-    int inner_pop_back(U & item) {
+    int pop_back_impl(U & item) {
         mutex_.lock();
 
         if (head_ == tail_) {
