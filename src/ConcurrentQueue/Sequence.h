@@ -63,13 +63,11 @@ public:
     void setMaxValue() { set(kMaxSequenceValue); }
 
     T get() const {
-        //return value_.load(std::memory_order_acquire);
-        return value_.load(std::memory_order_seq_cst);
+        return value_.load(std::memory_order_acquire);
     }
 
     void set(T value) {
-        //value_.store(value, std::memory_order_release);
-        value_.store(value, std::memory_order_seq_cst);
+        value_.store(value, std::memory_order_release);
     }
 
     T relax_get() const {
