@@ -305,7 +305,6 @@ public:
     typedef typename impl_type::duration_type   duration_type;
 
 private:
-    impl_type    impl_;
     time_point_t start_time_;
     time_point_t stop_time_;
     time_float_t elapsed_time_;
@@ -317,7 +316,7 @@ private:
 public:
     StopWatchBase() : elapsed_time_(static_cast<time_float_t>(0)),
         total_elapsed_time_(static_cast<time_float_t>(0)), running_(false) {
-        start_time_ = impl_.get_now();
+        start_time_ = impl_type::get_now();
     };
     ~StopWatchBase() {};
 
@@ -325,7 +324,7 @@ public:
         __COMPILER_BARRIER();
         elapsed_time_ = static_cast<time_float_t>(0);
         total_elapsed_time_ = static_cast<time_float_t>(0);
-        start_time_ = impl_.get_now();
+        start_time_ = impl_type::get_now();
         running_ = false;
         __COMPILER_BARRIER();
 	}
@@ -335,7 +334,7 @@ public:
         running_ = false;
         elapsed_time_ = static_cast<time_float_t>(0);
         total_elapsed_time_ = static_cast<time_float_t>(0);
-        start_time_ = impl_.get_now();
+        start_time_ = impl_type::get_now();
         running_ = true;
         __COMPILER_BARRIER();
     }
@@ -343,7 +342,7 @@ public:
     void start() {
         if (!running_) {
             elapsed_time_ = static_cast<time_float_t>(0);
-            start_time_ = impl_.get_now();
+            start_time_ = impl_type::get_now();
             running_ = true;
         }
         __COMPILER_BARRIER();
@@ -352,20 +351,20 @@ public:
     void stop() {
 		__COMPILER_BARRIER();
         if (running_) {
-            stop_time_ = impl_.get_now();
+            stop_time_ = impl_type::get_now();
             running_ = false;
         }
     }
 
     void mark_start() {
-        start_time_ = impl_.get_now();
+        start_time_ = impl_type::get_now();
         running_ = true;
         __COMPILER_BARRIER();
     }
 
     void mark_stop() {
         __COMPILER_BARRIER();
-        stop_time_ = impl_.get_now();
+        stop_time_ = impl_type::get_now();
         running_ = false;
     }
 
@@ -378,7 +377,7 @@ public:
     }
 
     time_float_t getIntervalMillisec() {
-        return getIntervalSecond() * 1000.0;
+        return getIntervalSecond() * static_cast<time_float_t>(1000.0);
     }
 
     void continues() {
@@ -409,7 +408,7 @@ public:
     }
 
     time_float_t peekElapsedMillisec() {
-        return peekElapsedSecond() * 1000.0;
+        return peekElapsedSecond() * static_cast<time_float_t>(1000.0);
     }
 
     time_float_t getElapsedSecond() {
@@ -420,7 +419,7 @@ public:
     }
 
     time_float_t getElapsedMillisec() {
-        return getElapsedMillisec() * 1000.0;
+        return getElapsedMillisec() * static_cast<time_float_t>(1000.0);
     }
 
     time_float_t getTotalSecond() const {
@@ -430,14 +429,13 @@ public:
 
     time_float_t getTotalMillisec() const {
         __COMPILER_BARRIER();
-        return total_elapsed_time_ * 1000.0;
+        return total_elapsed_time_ * static_cast<time_float_t>(1000.0);
     }
 };
 
 template <typename TimeFloatType>
 class StdStopWatchImpl {
 public:
-    
     typedef TimeFloatType                                   time_float_t;
     typedef double                                          time_stamp_t;
     typedef std::chrono::time_point<high_resolution_clock>  time_point_t;
@@ -447,7 +445,7 @@ public:
     StdStopWatchImpl() {}
     ~StdStopWatchImpl() {}
 
-    time_point_t get_now() const {
+    static time_point_t get_now() {
         return std::chrono::high_resolution_clock::now();
     }
 
@@ -469,7 +467,6 @@ typedef StopWatchBase<StdStopWatchImpl<double>> StdStopWatch;
 template <typename TimeFloatType>
 class TickCountStopWatchImpl {
 public:
-    
     typedef TimeFloatType   time_float_t;
     typedef DWORD           time_stamp_t;
     typedef DWORD           time_point_t;
@@ -479,7 +476,7 @@ public:
     TickCountStopWatchImpl() {}
     ~TickCountStopWatchImpl() {}
 
-    time_point_t get_now() const {
+    static time_point_t get_now() {
         return ::timeGetTime();
     }
 
@@ -497,4 +494,4 @@ typedef StopWatchBase<TickCountStopWatchImpl<double>> TickCountStopWatch;
 
 #endif // _WIN32
 
-#undef __COMPILER_BARRIRER
+#undef __COMPILER_BARRIER
