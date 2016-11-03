@@ -427,7 +427,7 @@ public:
 
     time_float_t peekElapsedSecond() const {
         __COMPILER_BARRIER();
-        elapsed_time = impl_type::get_interval_time(impl_type::get_now(), start_time_);
+        time_float_t elapsed_time = impl_type::get_interval_time(impl_type::get_now(), start_time_);
         __COMPILER_BARRIER();
         return elapsed_time;
     }
@@ -459,7 +459,7 @@ public:
 };
 
 template <typename T>
-typename StopWatchBase<T>::time_point_t StopWatchBase<T>::base_time_ = (typename StopWatchBase<T>::impl_type)::get_now();
+typename StopWatchBase<T>::time_point_t StopWatchBase<T>::base_time_ = StopWatchBase<T>::impl_type::get_now();
 
 template <typename TimeFloatType>
 class StdStopWatchImpl {
