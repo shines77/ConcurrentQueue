@@ -462,7 +462,7 @@ public:
     }
 };
 
-typedef StopWatchBase<StdStopWatchImpl<double>>         StdStopWatch;
+typedef StopWatchBase<StdStopWatchImpl<double>> StdStopWatch;
 
 #if defined(_WIN32) || defined(WIN32) || defined(OS_WINDOWS) || defined(__WINDOWS__)
 
@@ -493,7 +493,7 @@ public:
     }
 };
 
-typedef StopWatchBase<TickCountStopWatchImpl<double>>   TickCountStopWatch;
+typedef StopWatchBase<TickCountStopWatchImpl<double>> TickCountStopWatch;
 
 #endif // _WIN32
 
