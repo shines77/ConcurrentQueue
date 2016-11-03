@@ -268,7 +268,10 @@ void run_queue_test_impl(unsigned message_count, unsigned producers, unsigned co
     sw.stop();
     
     printf("Elapsed time :  %-11.3f second(s)\n", sw.getElapsedSecond());
-    printf("Throughput   :  %-11.1f op/sec\n", (double)(message_count) / sw.getElapsedSecond());
+    if (sw.getElapsedSecond() != 0.0)
+        printf("Throughput   :  %-11.1f op/sec\n", (double)(message_count) / sw.getElapsedSecond());
+    else
+        printf("Throughput   :  %-11s op/sec\n", "+INF");
     printf("\n");
 }
 

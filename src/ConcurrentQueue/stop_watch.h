@@ -299,10 +299,15 @@ template <typename T>
 class StopWatchBase {
 public:
     typedef T                                   impl_type;
-    typedef typename impl_type::time_stamp_t    time_stamp_t;
     typedef typename impl_type::time_float_t    time_float_t;
+    typedef typename impl_type::time_stamp_t    time_stamp_t;
     typedef typename impl_type::time_point_t    time_point_t;
     typedef typename impl_type::duration_type   duration_type;
+
+    // The zero value time.
+    const time_float_t kTimeZero = static_cast<time_float_t>(0.0);
+    // 1 second = 1000 millisec
+    const time_float_t kMillisecCoff = static_cast<time_float_t>(1000.0);;
 
 private:
     time_point_t start_time_;
@@ -314,16 +319,16 @@ private:
     static time_point_t base_time_;
 
 public:
-    StopWatchBase() : elapsed_time_(static_cast<time_float_t>(0)),
-        total_elapsed_time_(static_cast<time_float_t>(0)), running_(false) {
+    StopWatchBase() : elapsed_time_(kTimeZero),
+        total_elapsed_time_(kTimeZero), running_(false) {
         start_time_ = impl_type::get_now();
     };
     ~StopWatchBase() {};
 
 	void reset() {
         __COMPILER_BARRIER();
-        elapsed_time_ = static_cast<time_float_t>(0);
-        total_elapsed_time_ = static_cast<time_float_t>(0);
+        elapsed_time_ = kTimeZero;
+        total_elapsed_time_ = kTimeZero;
         start_time_ = impl_type::get_now();
         running_ = false;
         __COMPILER_BARRIER();
@@ -332,8 +337,8 @@ public:
     void restart() {
         __COMPILER_BARRIER();
         running_ = false;
-        elapsed_time_ = static_cast<time_float_t>(0);
-        total_elapsed_time_ = static_cast<time_float_t>(0);
+        elapsed_time_ = kTimeZero;
+        total_elapsed_time_ = kTimeZero;
         start_time_ = impl_type::get_now();
         running_ = true;
         __COMPILER_BARRIER();
@@ -341,7 +346,7 @@ public:
 
     void start() {
         if (!running_) {
-            elapsed_time_ = static_cast<time_float_t>(0);
+            elapsed_time_ = kTimeZero;
             start_time_ = impl_type::get_now();
             running_ = true;
         }
@@ -353,6 +358,8 @@ public:
         if (running_) {
             stop_time_ = impl_type::get_now();
             running_ = false;
+            __COMPILER_BARRIER();
+            elapsed_time_ = this->getIntervalTime();
         }
     }
 
@@ -368,58 +375,76 @@ public:
         running_ = false;
     }
 
+    void continues() {
+        this->start();
+    }
+
+	void pause() {
+        __COMPILER_BARRIER();
+        if (running_) {
+            stop_time_ = impl_type::get_now();
+            running_ = false;
+            __COMPILER_BARRIER();
+            elapsed_time_ = this->getIntervalTime();
+            total_elapsed_time_ += elapsed_time_;
+        }
+        __COMPILER_BARRIER();
+	}
+
+    void again() {
+        __COMPILER_BARRIER();
+        stop();
+        __COMPILER_BARRIER();
+        if (elapsed_time_ != kTimeZero) {
+            total_elapsed_time_ += elapsed_time_;
+            elapsed_time_ = kTimeZero;
+        }
+    }
+
+    static time_stamp_t now() {
+        __COMPILER_BARRIER();
+        time_stamp_t _now = impl_type::now(impl_type::get_now(), base_time_);
+        __COMPILER_BARRIER();
+        return _now;
+    }
+
+    time_float_t getIntervalTime() const {
+        __COMPILER_BARRIER();
+        return impl_type::get_interval_time(stop_time_, start_time_);
+    }
+
     time_float_t getIntervalSecond() {
         __COMPILER_BARRIER();
         if (!running_) {
-            elapsed_time_ = impl_type::get_interval_time(stop_time_, start_time_);
+            elapsed_time_ = this->getIntervalTime();
         }
         return elapsed_time_;
     }
 
     time_float_t getIntervalMillisec() {
-        return getIntervalSecond() * static_cast<time_float_t>(1000.0);
+        return this->getIntervalSecond() * kMillisecCoff;
     }
 
-    void continues() {
-        start();
-    }
-
-	void pause() {
+    time_float_t peekElapsedSecond() const {
         __COMPILER_BARRIER();
-        stop();
-        __COMPILER_BARRIER();
-		double elapsed_time = getIntervalSecond();
-        __COMPILER_BARRIER();
-		total_elapsed_time_ += elapsed_time;
-	}
-
-    static time_stamp_t now() {
-        __COMPILER_BARRIER();
-        time_stamp_t _now = impl_type::now(impl_.get_now(), base_time_);
-        __COMPILER_BARRIER();
-        return _now;
-    }
-
-    time_float_t peekElapsedSecond() {
-        __COMPILER_BARRIER();
-        elapsed_time = impl_type::get_interval_time(impl_.get_now(), start_time_);
+        elapsed_time = impl_type::get_interval_time(impl_type::get_now(), start_time_);
         __COMPILER_BARRIER();
         return elapsed_time;
     }
 
-    time_float_t peekElapsedMillisec() {
-        return peekElapsedSecond() * static_cast<time_float_t>(1000.0);
+    time_float_t peekElapsedMillisec() const {
+        return this->peekElapsedSecond() * kMillisecCoff;
     }
 
     time_float_t getElapsedSecond() {
         __COMPILER_BARRIER();
         stop();
         __COMPILER_BARRIER();
-        return getIntervalSecond();
+        return elapsed_time_;
     }
 
     time_float_t getElapsedMillisec() {
-        return getElapsedMillisec() * static_cast<time_float_t>(1000.0);
+        return getElapsedSecond() * kMillisecCoff;
     }
 
     time_float_t getTotalSecond() const {
@@ -429,9 +454,12 @@ public:
 
     time_float_t getTotalMillisec() const {
         __COMPILER_BARRIER();
-        return total_elapsed_time_ * static_cast<time_float_t>(1000.0);
+        return total_elapsed_time_ * kMillisecCoff;
     }
 };
+
+template <typename T>
+typename StopWatchBase<T>::time_point_t StopWatchBase<T>::base_time_ = (typename StopWatchBase<T>::impl_type)::get_now();
 
 template <typename TimeFloatType>
 class StdStopWatchImpl {
@@ -491,6 +519,10 @@ public:
 };
 
 typedef StopWatchBase<TickCountStopWatchImpl<double>> TickCountStopWatch;
+
+#else
+
+typedef StdStopWatch TickCountStopWatch;
 
 #endif // _WIN32
 
