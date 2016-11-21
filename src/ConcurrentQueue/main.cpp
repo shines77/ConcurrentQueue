@@ -261,7 +261,7 @@ void run_queue_test_impl(unsigned message_count, unsigned producers, unsigned co
     printf("\n");
 
     //StopWatch sw;
-    //TickCountStopWatch sw;
+    //timeGetTimeStopWatch sw;
     StdStopWatch sw;
     sw.start();
     run_test_threads<QueueType, MessageType>(message_count, producers, consumers, initCapacity);

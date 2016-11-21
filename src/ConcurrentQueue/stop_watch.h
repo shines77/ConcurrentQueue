@@ -493,7 +493,7 @@ typedef StopWatchBase<StdStopWatchImpl<double>> StdStopWatch;
 #if defined(_WIN32) || defined(WIN32) || defined(OS_WINDOWS) || defined(__WINDOWS__)
 
 template <typename TimeFloatType>
-class TickCountStopWatchImpl {
+class timeGetTimeStopWatchImpl {
 public:
     typedef TimeFloatType   time_float_t;
     typedef DWORD           time_stamp_t;
@@ -501,8 +501,8 @@ public:
     typedef time_float_t    duration_type;
 
 public:
-    TickCountStopWatchImpl() {}
-    ~TickCountStopWatchImpl() {}
+    timeGetTimeStopWatchImpl() {}
+    ~timeGetTimeStopWatchImpl() {}
 
     static time_point_t get_now() {
         return ::timeGetTime();
@@ -518,11 +518,11 @@ public:
     }
 };
 
-typedef StopWatchBase<TickCountStopWatchImpl<double>> TickCountStopWatch;
+typedef StopWatchBase<timeGetTimeStopWatchImpl<double>> timeGetTimeStopWatch;
 
 #else
 
-typedef StdStopWatch TickCountStopWatch;
+typedef StdStopWatch timeGetTimeStopWatch;
 
 #endif // _WIN32
 
